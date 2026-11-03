@@ -110,6 +110,8 @@ test('只用已有食材：牛肉限制肉类，未选择的蔬菜与主食不�
  const staple=app.modeled.find(r=>r.name==='番薯粥');
  assert.equal(app.eligible(beef),true);
  assert.equal(app.eligible(pork),false);
+ assert.equal(app.eligible(app.modeled.find(r=>r.name==='白切鸡')),false);
+ assert.equal(app.eligible(app.modeled.find(r=>r.name==='豉油鱼')),false);
  assert.equal(app.eligible(vegetable),true);
  assert.equal(app.eligible(staple),true);
  assert.equal(app.matchesOwned('牛腩'),true);
