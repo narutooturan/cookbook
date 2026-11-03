@@ -195,7 +195,7 @@ document.addEventListener("click",e=>{
  if(action==="shop"){addShopping(menus[mi]);view="shopping";renderV2();}
  if(action==="remove"){shopping.splice(ii,1);persistShopping();renderV2();}
  if(action==="clear"){shopping=[];persistShopping();renderV2();}
- if(action==="copy"){const value=shopping.map(x=>(x.done?"☑ ":"☐ ")+x.name).join("\n");navigator.clipboard?.writeText(value).then(()=>alert("已复制买菜清单")).catch(()=>prompt("复制买菜清单",value));}
+ if(action==="copy"){const value=shopping.map(x=>(x.done?"☑ ":"☐ ")+x.name).join("\n");if(navigator.clipboard?.writeText){navigator.clipboard.writeText(value).then(()=>alert("已复制买菜清单")).catch(()=>prompt("复制买菜清单",value));}else prompt("复制买菜清单",value);}
  if(action==="saved"){const refs=(savedMenus[mi]?.items||[]).flatMap(x=>x.ingredients||[]);const existing=new Set(shopping.map(x=>x.name));for(const name of refs)if(!existing.has(name)){shopping.push({name,done:false});existing.add(name);}persistShopping();view="shopping";renderV2();}
  if(action==="detail"){const recipe=modeled.find(x=>x.id===ii);if(recipe)openDetail(recipe.id);}
 });
@@ -206,7 +206,7 @@ document.addEventListener("change",e=>{
  if(el.matches("[data-v2-check]")){shopping[Number(el.dataset.v2Check)].done=el.checked;persistShopping();}
 });
 document.addEventListener("input",e=>{
- if(e.target.id==="v2Search"){foodQuery=e.target.value;renderIngredients();}
+ if(e.target.id==="v2Search"){const cursor=e.target.selectionStart;foodQuery=e.target.value;renderIngredients();const replacement=$2("#v2Search");replacement?.focus();if(cursor!==null)replacement?.setSelectionRange(cursor,cursor);}
 });
 function persistShopping(){storage.set("shopping",shopping);}
 function addShopping(menu){
