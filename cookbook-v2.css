@@ -15,3 +15,21 @@
 .v2-exclude-chip:focus-visible,.v2-clear:focus-visible{outline:3px solid #9cad89;outline-offset:3px}
 .v2-exclude-caption{color:#766c60;font-size:12px;line-height:1.8;margin:13px 0 0}
 @media(max-width:650px){.v2-exclude{padding:15px}.v2-exclude-chip{padding:9px 13px}.v2-exclude-head{gap:8px}}
+
+/* 库存配餐与海鲜赏味提示 */
+.v2-pantry-entry{display:flex;gap:9px;align-items:center}
+.v2-pantry-entry .search{flex:1;min-width:0;padding:11px 13px}
+.v2-pantry-entry button{border:1px solid var(--green,#536e56);border-radius:10px;padding:11px 15px;white-space:nowrap;cursor:pointer}
+.v2-pantry-suggestions{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.v2-pantry-suggestions button{border:1px solid #e5dfd3;background:#fffdf8;color:#6c675d;border-radius:18px;padding:7px 11px;font-size:12px;cursor:pointer}
+.v2-pantry-suggestions button:hover{border-color:#6a876e;color:#536e56}
+.v2-pantry-owned{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 15px}
+.v2-pantry-owned button{background:#e5e8dc;color:#456149;border:1px solid #d5dece;border-radius:20px;padding:8px 11px;font-size:12px;cursor:pointer}
+.v2-pantry-modes{display:inline-flex;flex-wrap:wrap;gap:4px;background:#f0ede4;padding:4px;border-radius:12px}
+.v2-pantry-modes button{border:0;border-radius:9px;padding:9px 12px;background:transparent;color:#807567;font-size:12px;cursor:pointer}
+.v2-pantry-modes button.on{background:#536e56;color:white}
+.v2-sea-note{padding:14px 16px;background:#edf0e8;border:1px solid #dce4d7;border-radius:12px;margin:18px 0;color:#48634d}
+.v2-sea-note strong{font-size:13px}.v2-sea-note p{font-size:12px;line-height:1.9;margin:7px 0}.v2-sea-note small{font-size:11px;color:#7c887a}
+.v2-sea-detail{background:#f8f5ec;border-radius:8px;padding:8px 10px}
+.v2-stock-hint{color:#6e8b72!important;margin-top:6px!important;line-height:1.5}
+@media(max-width:650px){.v2-pantry-entry{flex-wrap:wrap}.v2-pantry-entry button{width:100%}.v2-pantry-modes{display:flex;width:100%}.v2-pantry-modes button{flex:1}}
