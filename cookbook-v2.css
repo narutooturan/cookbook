@@ -33,3 +33,10 @@
 .v2-sea-detail{background:#f8f5ec;border-radius:8px;padding:8px 10px}
 .v2-stock-hint{color:#6e8b72!important;margin-top:6px!important;line-height:1.5}
 @media(max-width:650px){.v2-pantry-entry{flex-wrap:wrap}.v2-pantry-entry button{width:100%}.v2-pantry-modes{display:flex;width:100%}.v2-pantry-modes button{flex:1}}
+
+/* 让主操作紧贴推荐套餐，并在手机上保持完整点击区域 */
+.v2-generate-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:20px 0 14px;padding:15px 0 4px;border-top:1px solid var(--line,#e7dfd1)}
+.v2-generate-button{padding:13px 23px;border:1px solid var(--green,#536e56);border-radius:12px;background:var(--green,#536e56);color:#fff;cursor:pointer;font-size:14px;font-weight:600;box-shadow:0 3px 9px rgba(66,90,66,.10)}
+.v2-generate-button:hover{background:#456048!important}
+.v2-generate-bar span{color:var(--muted,#918678);font-size:12px;line-height:1.7}
+@media(max-width:650px){.v2-generate-bar{gap:9px}.v2-generate-button{width:100%;min-height:48px}.v2-generate-bar span{width:100%;text-align:center}}
