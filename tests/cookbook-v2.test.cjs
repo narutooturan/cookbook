@@ -157,3 +157,14 @@ test('我的清单保留旧点菜数据、支持菜品与待买食材两栏',()=
  assert.ok(source.includes("save();"));
  assert.ok(source.includes('storage.get("shopping",[])'));
 });
+
+test('已选菜品支持二次确认后清空，不影响其他清单',()=>{
+ const ui=source.slice(source.indexOf('function renderList(){'),source.indexOf('function renderShopping('));
+ assert.ok(ui.includes('data-v2-action="clear-dishes"'));
+ const handler=source.slice(source.indexOf('if(action==="clear-dishes"'),source.indexOf('if(action==="clear-dishes"')+260);
+ assert.ok(handler.includes('window.confirm('));
+ assert.ok(handler.includes('order=[]'));
+ assert.ok(handler.includes('save();render();'));
+ assert.ok(!handler.includes('shopping=[]'));
+ assert.ok(!handler.includes('favorites=[]'));
+});
