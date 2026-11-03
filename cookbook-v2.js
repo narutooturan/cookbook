@@ -176,6 +176,18 @@ document.addEventListener("click",e=>{
  }
 },true);
 document.addEventListener("click",e=>{
+ const excludeOption=e.target.closest("[data-v2-exclude]");
+ if(excludeOption){
+  const group=excludeOption.dataset.v2Exclude;
+  if(excluded.has(group))excluded.delete(group);else excluded.add(group);
+  regenerate();
+  return;
+ }
+ if(e.target.closest("[data-v2-clear-exclusions]")){
+  excluded.clear();
+  regenerate();
+  return;
+ }
  const b=e.target.closest("[data-v2]");
  if(b){view=b.dataset.v2;foodQuery="";renderV2();window.scrollTo({top:0,behavior:"smooth"});return;}
  const m=e.target.closest("[data-v2-month]");
@@ -202,7 +214,6 @@ document.addEventListener("click",e=>{
 document.addEventListener("change",e=>{
  const el=e.target;
  if(el.id==="v2People"){familyCount=Number(el.value);renderV2();}
- if(el.id==="v2Exclude"){excluded=new Set([...el.selectedOptions].map(x=>x.value));regenerate();}
  if(el.matches("[data-v2-check]")){shopping[Number(el.dataset.v2Check)].done=el.checked;persistShopping();}
 });
 document.addEventListener("input",e=>{
@@ -246,7 +257,7 @@ function renderPlanner(){
  $2("#content").innerHTML='<div class="v2-intro">每次为你准备 3 套不同菜单。每套确保包含蔬菜、蛋白质和主食；不计算未经核实的热量或克重。</div>'
  +'<div class="v2-controls"><label>月份 <select id="v2MonthSelect">'+Array.from({length:12},(_,i)=>'<option value="'+(i+1)+'" '+(month===i+1?"selected":"")+'>'+(i+1)+'月</option>').join("")+'</select></label><label>人数 <select id="v2People">'+[1,2,3,4,5,6].map(n=>'<option value="'+n+'" '+(n===familyCount?"selected":"")+'>'+n+' 人</option>').join("")+'</select></label><button data-v2-action="generate" class="v2-primary">✦ 随机推荐三套</button></div>'
  +'<div class="v2-intro">人数用于记录用餐场景；由于原菜谱尚无统一用量，暂不推算具体采购克数。</div>'
- +'<div class="v2-controls"><label>本次排除食材类别 <select id="v2Exclude" multiple size="4" aria-label="选择排除食材类别">'+["肉类","禽类","水产","蛋类","豆制品"].map(n=>'<option value="'+n+'" '+(excluded.has(n)?"selected":"")+'>'+n+'</option>').join("")+'</select></label><span class="v2-intro">按住 Ctrl 可多选；调整后重新生成。</span></div>'
+ +'<section class="v2-exclude" aria-label="本次排除食材类别"><div class="v2-exclude-head"><div><strong>本次不想吃</strong><span>可多选，再点一次取消，菜单自动更新</span></div><button type="button" class="v2-clear" data-v2-clear-exclusions '+(excluded.size?'':'disabled')+'>清除筛选'+(excluded.size?' · '+excluded.size:'')+'</button></div><div class="v2-exclude-options" role="group" aria-label="排除食材类别">'+["肉类","禽类","水产","蛋类","豆制品"].map(n=>'<button type="button" class="v2-exclude-chip '+(excluded.has(n)?"is-selected":"")+'" data-v2-exclude="'+n+'" aria-pressed="'+excluded.has(n)+'">'+(excluded.has(n)?"✓ ":"＋ ")+n+'</button>').join("")+'</div>'+(excluded.size?'<p class="v2-exclude-caption">已排除 '+[...excluded].map(esc).join("、")+'；若筛选后无法满足营养搭配，可取消部分选项。</p>':'')+'</section>'
  +(menus.length?'<div class="v2-menu-grid">'+menus.map((menu,i)=>'<article class="v2-menu"><div class="v2-line"><h3>方案 '+(i+1)+'</h3><span class="v2-good">'+month+'月 · 时令优先</span></div>'+menu.items.map((r,j)=>'<div class="v2-menu-item"><div><strong>'+esc(r.name)+'</strong><small>'+esc(r.base?"基础主食":r.roles.join(" · ")||r.category||"家常菜")+'</small></div><div class="v2-item-actions"><button data-v2-action="lock" data-menu="'+i+'" data-item="'+j+'" title="锁定">'+(menu.locked[j]?"🔒":"♧")+'</button>'+(r.base?"":'<button data-v2-action="swap" data-menu="'+i+'" data-item="'+j+'" '+(menu.locked[j]?"disabled":"")+'>换菜</button>')+'</div></div>').join("")+'<div class="v2-menu-actions"><button data-v2-action="reroll" data-menu="'+i+'">换一套</button><button data-v2-action="save" data-menu="'+i+'">收藏套餐</button><button data-v2-action="shop" data-menu="'+i+'" class="v2-primary">生成买菜清单</button></div></article>').join(" ")+'</div>':'<div class="empty">当前条件下暂无符合全部营养角色的套餐，请调整条件。</div>')
  +'<div class="v2-saved"><h3>已保存的套餐</h3>'+(savedMenus.length?savedMenus.slice(0,5).map((s,i)=>'<div class="v2-line"><span>'+esc(s.names.join("、"))+'</span><button data-v2-action="saved" data-menu="'+i+'">加入清单</button></div>').join(""):"还没有收藏的套餐")+'</div>';
  $2("#v2MonthSelect").onchange=e=>{month=Number(e.target.value);regenerate();};
