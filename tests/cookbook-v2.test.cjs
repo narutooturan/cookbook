@@ -168,3 +168,13 @@ test('已选菜品支持二次确认后清空，不影响其他清单',()=>{
  assert.ok(!handler.includes('shopping=[]'));
  assert.ok(!handler.includes('favorites=[]'));
 });
+
+test('待买食材与已选菜品操作区统一放在列表下方右侧',()=>{
+ const list=source.slice(source.indexOf('function renderList(){'),source.indexOf('function renderShopping('));
+ const shopping=source.slice(source.indexOf('function renderShopping('),source.indexOf('mountNavigation();\nregenerate();'));
+ assert.ok(list.indexOf('v2-dishes')<list.indexOf('v2-list-footer'));
+ assert.ok(shopping.indexOf('v2-shopping')<shopping.indexOf('v2-list-footer'));
+ assert.ok(shopping.includes('class="v2-clear-dishes" data-v2-action="clear"'));
+ assert.ok(shopping.includes('class="v2-primary" data-v2-action="copy"'));
+ assert.ok(!shopping.includes('v2-shop-actions'));
+});
