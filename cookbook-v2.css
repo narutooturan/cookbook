@@ -40,3 +40,33 @@
 .v2-generate-button:hover{background:#456048!important}
 .v2-generate-bar span{color:var(--muted,#918678);font-size:12px;line-height:1.7}
 @media(max-width:650px){.v2-generate-bar{gap:9px}.v2-generate-button{width:100%;min-height:48px}.v2-generate-bar span{width:100%;text-align:center}}
+
+/* 2.1 统一桌面导航与手机底部五个 Tab */
+.v2-side-nav{min-height:45px}
+.v2-notes-nav{border-top:1px solid var(--line,#e7dfd1);margin-top:17px;padding-top:10px}
+.v2-nav{display:none!important}
+.toolbar #orderBtn{display:none!important}
+.v2-list-tabs{display:flex;align-items:center;gap:5px;flex-wrap:wrap;width:max-content;max-width:100%;border-radius:12px;background:#f0ede4;padding:4px;margin:17px 0 18px}
+.v2-list-tabs button{border:0;background:transparent;color:#807567;border-radius:9px;cursor:pointer;padding:10px 15px;font-size:13px;white-space:nowrap}
+.v2-list-tabs button.on{background:var(--green,#536e56);color:#fff}
+.v2-dishes{border:1px solid #e7dfd1;border-radius:14px;overflow:hidden;background:#fff}
+.v2-dish-row{padding:14px 17px;border-bottom:1px solid #eee7dc;display:flex;align-items:center;gap:13px}
+.v2-dish-row:last-child{border-bottom:0}
+.v2-dish-title{border:0;background:transparent;color:#536e56;font-weight:600;text-align:left;cursor:pointer;flex:0 0 auto;max-width:42%}
+.v2-dish-row>span{flex:1;min-width:0;color:#928777;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.v2-dish-row>button:last-child{border:0;background:transparent;color:#9f8b7b;cursor:pointer;padding:6px 0}
+.v2-list-footer{display:flex;justify-content:flex-end;margin-top:15px}
+.v2-list-footer .v2-primary{border:0;border-radius:10px;padding:12px 17px;cursor:pointer}
+.v2-tips-link{display:none}
+@media(max-width:650px){
+ .bottomnav{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;justify-content:stretch;padding:7px 3px calc(7px + env(safe-area-inset-bottom))}
+ .bottomnav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;padding:4px 1px!important;font-size:11px!important;line-height:1.2;white-space:nowrap}
+ .v2-bottom-icon{font-size:19px;line-height:22px;height:22px}
+ .bottomnav button.active .v2-bottom-icon{color:var(--green,#536e56)}
+ .v2-tips-link{display:inline-flex!important;align-items:center}
+ .v2-list-tabs{width:100%;flex-wrap:nowrap}
+ .v2-list-tabs button{flex:1;min-width:0;padding:11px 4px;font-size:12px}
+ .v2-dish-row{gap:8px;padding:13px 12px}
+ .v2-dish-title{max-width:48%;font-size:13px}
+ .v2-dish-row>span{font-size:11px}
+}
