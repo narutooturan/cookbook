@@ -12,7 +12,7 @@ const original=JSON.parse(dataMatch[1]);
 const recipes=original.recipes.map((r,id)=>({...r,id}));
 const definitions=source.slice(source.indexOf('const SEASONS ='),source.indexOf('let view='));
 const generator=source.slice(source.indexOf('function seasonScore'),source.indexOf('function regenerate()'));
-const make = new Function('recipes',definitions+'let month=11;let excluded=new Set();\n'+generator+'\nreturn {parseIngredients,classify,modeled,ingredientMap,generate,countCovered};');
+const make = new Function('recipes',definitions+'let month=11;let excluded=new Set();let ownedIngredients=new Set();let ownedOnly=false;\n'+generator+'\nreturn {parseIngredients,classify,modeled,ingredientMap,generate,countCovered,SEAFOOD_TIMING,recipeInventoryCoverage,ingredientCategory};');
 const api=make(recipes);
 test('保留完整的 174 道菜谱与步骤',()=>{
  assert.equal(recipes.length,174);
@@ -64,10 +64,35 @@ test('排除筛选采用可取消的独立标签，并支持一键清除',()=>{
  assert.ok(!source.includes('id="v2Exclude" multiple'));
 });
 test('排除食材类别时配餐算法不会选用所排除的食材',()=>{
- const forbidden=new Function('recipes',definitions+'let month=11;let excluded=new Set(["水产"]);\n'+generator+'\nreturn {generate,modeled,ingredientCategory};')(recipes);
+ const forbidden=new Function('recipes',definitions+'let month=11;let excluded=new Set(["水产"]);let ownedIngredients=new Set();let ownedOnly=false;\n'+generator+'\nreturn {generate,modeled,ingredientCategory};')(recipes);
  for(let n=0;n<100;n++){
   const menu=forbidden.generate();
   assert.ok(menu);
   assert.ok(menu.items.every(r=>r.base || !r.refs.some(x=>x.choices.some(choice=>forbidden.ingredientCategory(choice)==='水产'))));
  }
+});
+
+test('已有食材优先及严格库存模式',()=>{
+ const makeOwned=new Function('recipes','inventory','strict',definitions+'let month=11;let excluded=new Set();let ownedIngredients=new Set(inventory);let ownedOnly=strict;\n'+generator+'\nreturn {generate,recipeInventoryCoverage,countCovered};');
+ const owned=['青菜','豆腐','鸡肉','大米','菌菇','白萝卜','牛肉','面条','番茄','鸡蛋','黄瓜'];
+ const strict=makeOwned(recipes,owned,true);
+ for(let i=0;i<80;i++){
+  const menu=strict.generate();
+  if(!menu)continue;
+  const roles=strict.countCovered(menu.items);
+  assert.ok(roles.veg&&roles.protein&&roles.starch);
+  assert.ok(menu.items.every(item=>strict.recipeInventoryCoverage(item,new Set(owned)).missing.length===0));
+ }
+ const soft=makeOwned(recipes,['大米','白萝卜','鸡蛋'],false);
+ assert.ok(soft.generate());
+});
+test('浙江海鲜赏味期保留独立物种名称，不将带鱼等归并为鱼',()=>{
+ assert.ok(api.ingredientMap.has('带鱼'));
+ assert.ok(api.ingredientMap.has('鲳鱼'));
+ assert.ok(api.ingredientMap.has('黄鱼'));
+ assert.deepEqual(api.SEAFOOD_TIMING['带鱼'].peak,[12,1]);
+ assert.deepEqual(api.SEAFOOD_TIMING['大闸蟹'].peak,[10,11]);
+});
+test('库存输入、移除、严格模式与购物清单去重的 UI 已接入',()=>{
+ for(const s of ['v2PantryInput','data-v2-pantry-suggestion','data-v2-pantry-item','data-v2-pantry-mode','ownedOnly','ownedIngredients','recipeInventoryCoverage'])assert.ok(source.includes(s));
 });
