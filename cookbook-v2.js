@@ -125,7 +125,7 @@ const pantry=[{name:"米饭",ingredients:["大米"],roles:["主食"],base:true}]
 let view=null, month=new Date().getMonth()+1, familyCount=2, selectedCategory="全部", foodQuery="", excluded=new Set();
 let ownedIngredients=new Set(storage.get("ownedIngredients",[])),ownedOnly=false,pantryQuery="";
 const saveOwned=()=>storage.set("ownedIngredients",[...ownedIngredients]);
-let menus=[], shopping=storage.get("shopping",[]), savedMenus=storage.get("savedMenus",[]);
+let menus=[], shopping=storage.get("shopping",[]), listTab="dishes";
 const $2=s=>document.querySelector(s);
 function esc(s){return escapeHTML(String(s??""));}
 function seasonScore(r){
@@ -226,13 +226,38 @@ function regenerateOne(mi){
  }
  if(next){ next.locked=next.items.map(x=>preserved.some(p=>p.id===x.id));menus[mi]=next;renderV2(); }
 }
+const MAIN_MENU=[
+ {id:"recipes",title:"全部菜谱",short:"菜谱",icon:"⌂"},
+ {id:"ingredients",title:"时令食材",short:"食材",icon:"🌿"},
+ {id:"planner",title:"随机配餐",short:"配餐",icon:"✦"},
+ {id:"list",title:"我的清单",short:"清单",icon:"☷"},
+ {id:"favorites",title:"我的收藏",short:"收藏",icon:"♡"}
+];
+function navigateApp(target){
+ view=["ingredients","planner","list"].includes(target)?target:null;
+ if(target==="recipes"){page="all";category="全部";tag="全部";}
+ else if(target==="favorites"||target==="tips")page=target;
+ else if(view)page="all";
+ if(target==="list")listTab="dishes";
+ render();
+ window.scrollTo({top:0,behavior:"smooth"});
+}
 function mountNavigation(){
- if(!$2("#v2Nav")){
-   const row=document.createElement("div");row.id="v2Nav";row.className="v2-nav";
-   row.innerHTML='<button type="button" data-v2="ingredients">🌿 时令食材</button><button type="button" data-v2="planner">✦ 随机配餐</button><button type="button" data-v2="shopping">☷ 买菜清单</button>';
-   $2(".toolbar").before(row);
- }
- $2("#v2Nav").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.v2===view));
+ const nav=$2("#nav"),bottom=$2(".bottomnav");
+ if(!nav||!bottom)return;
+ const active=view||(page==="favorites"?"favorites":"recipes");
+ const existing=nav.innerHTML;
+ const categoryStart=existing.indexOf('<div class="side-label">菜谱分类');
+ const categoryHTML=categoryStart>=0?existing.slice(categoryStart):"";
+ nav.innerHTML=MAIN_MENU.map(item=>{
+  const count=item.id==="recipes"?recipes.length:item.id==="favorites"?favorites.length:item.id==="list"?order.length:"";
+  return '<button type="button" class="nav v2-side-nav '+(active===item.id?"active":"")+'" data-v2-page="'+item.id+'"><span>'+item.icon+'　'+item.title+'</span><span>'+count+'</span></button>';
+ }).join("")
+ +categoryHTML
+ +'<div class="v2-notes-nav"><button type="button" class="nav '+(page==="tips"&&!view?"active":"")+'" data-v2-page="tips"><span>✎　烹饪心得</span><span>✦</span></button></div>';
+ bottom.innerHTML=MAIN_MENU.map(item=>'<button type="button" class="'+(active===item.id?"active":"")+'" data-v2-page="'+item.id+'" aria-label="'+item.title+'"><span class="v2-bottom-icon">'+item.icon+'</span><span>'+item.short+'</span></button>').join("");
+ const orderBtn=$2("#orderBtn");
+ if(orderBtn){orderBtn.innerHTML="☷ 我的清单 <span id=\"orderCount\">"+order.length+"</span>";orderBtn.onclick=()=>navigateApp("list");}
 }
 const originalRender=render;
 render=function(){
@@ -241,9 +266,9 @@ render=function(){
  renderV2();
 };
 document.addEventListener("click",e=>{
- if(e.target.closest("[data-page],[data-tag],[data-category]")){
-  if(view){view=null;mountNavigation();}
- }
+ const item=e.target.closest("[data-v2-page]");
+ if(item){e.preventDefault();navigateApp(item.dataset.v2Page);return;}
+ if(e.target.closest("[data-category],[data-tag]"))view=null;
 },true);
 document.addEventListener("click",e=>{
  const excludeOption=e.target.closest("[data-v2-exclude]");
@@ -266,14 +291,12 @@ document.addEventListener("click",e=>{
   regenerate();
   return;
  }
- const b=e.target.closest("[data-v2]");
- if(b){view=b.dataset.v2;foodQuery="";renderV2();window.scrollTo({top:0,behavior:"smooth"});return;}
  const m=e.target.closest("[data-v2-month]");
  if(m){month=Number(m.dataset.v2Month);renderV2();return;}
  const c=e.target.closest("[data-v2-cat]");
  if(c){selectedCategory=c.dataset.v2Cat;renderV2();return;}
  const i=e.target.closest("[data-v2-ingredient]");
- if(i){selectedCategory="全部";foodQuery=i.dataset.v2Ingredient;view="ingredients";renderV2();return;}
+ if(i){selectedCategory="全部";foodQuery=i.dataset.v2Ingredient;navigateApp("ingredients");return;}
  const a=e.target.closest("[data-v2-action]");
  if(!a)return;
  const mi=Number(a.dataset.menu),ii=Number(a.dataset.item),action=a.dataset.v2Action;
@@ -281,13 +304,13 @@ document.addEventListener("click",e=>{
  if(action==="reroll")regenerateOne(mi);
  if(action==="swap")replaceItem(mi,ii);
  if(action==="lock"){menus[mi].locked[ii]=!menus[mi].locked[ii];renderV2();}
- if(action==="save"){savedMenus.unshift({date:new Date().toISOString(),names:menus[mi].items.map(x=>x.name),items:menus[mi].items.map(x=>({id:x.id,ingredients:x.refs.map(ref=>ref.name)}))});savedMenus=savedMenus.slice(0,30);storage.set("savedMenus",savedMenus);renderV2();}
- if(action==="shop"){addShopping(menus[mi]);view="shopping";renderV2();}
+ if(action==="shop"){addMenuToList(menus[mi]);navigateApp("list");}
  if(action==="remove"){shopping.splice(ii,1);persistShopping();renderV2();}
  if(action==="clear"){shopping=[];persistShopping();renderV2();}
  if(action==="copy"){const value=shopping.map(x=>(x.done?"☑ ":"☐ ")+x.name).join("\n");if(navigator.clipboard?.writeText){navigator.clipboard.writeText(value).then(()=>alert("已复制买菜清单")).catch(()=>prompt("复制买菜清单",value));}else prompt("复制买菜清单",value);}
- if(action==="saved"){const refs=(savedMenus[mi]?.items||[]).flatMap(x=>x.ingredients||[]);const existing=new Set(shopping.map(x=>x.name));for(const name of refs)if(!existing.has(name)){shopping.push({name,done:false});existing.add(name);}persistShopping();view="shopping";renderV2();}
  if(action==="detail"){const recipe=modeled.find(x=>x.id===ii);if(recipe)openDetail(recipe.id);}
+ if(action==="list-tab"){listTab=a.dataset.tab;renderV2();}
+ if(action==="list-shop"){syncShoppingFromOrder();listTab="shopping";renderV2();}
 });
 document.addEventListener("change",e=>{
  const el=e.target;
@@ -300,6 +323,25 @@ document.addEventListener("input",e=>{
  if(e.target.id==="v2Search"){const cursor=e.target.selectionStart;foodQuery=e.target.value;renderIngredients();const replacement=$2("#v2Search");replacement?.focus();if(cursor!==null)replacement?.setSelectionRange(cursor,cursor);}
 });
 function persistShopping(){storage.set("shopping",shopping);}
+function addMenuToList(menu){
+ for(const r of menu.items) {
+  if(Number.isInteger(r.id)&&!order.includes(r.id))order.push(r.id);
+ }
+ save();
+ syncShoppingFromOrder();
+ addShopping(menu);
+}
+function syncShoppingFromOrder(){
+ const unique=new Set(shopping.map(x=>x.name));
+ for(const id of order){
+  const recipe=modeled[id];if(!recipe)continue;
+  for(const ref of recipe.refs){
+   const n=ref.choices.find(c=>ownedIngredients.has(c))||ref.name;
+   if(n&&!unique.has(n)&&!matchesOwned(n)){shopping.push({name:n,done:false});unique.add(n);}
+  }
+ }
+ persistShopping();
+}
 function addShopping(menu){
  const unique=new Set(shopping.map(x=>x.name));
  for(const r of menu.items)for(const item of r.refs){
@@ -313,15 +355,14 @@ function prep(){
  $2("#tagChips").style.display="none";$2("#chips").style.display="none";
  $2(".toolbar").style.display="none";
  $2("#count").textContent="";
- $2("#heading").textContent=view==="ingredients"?"时令食材":view==="planner"?"今天吃什么？":"买菜清单";
- mountNavigation();
+ $2("#heading").textContent=view==="ingredients"?"时令食材":view==="planner"?"今天吃什么？":"我的清单";
 }
 function renderV2(){
- if(!view){$2(".toolbar").style.display="flex";$2("#content").classList.remove("v2-content");mountNavigation();return;}
+ if(!view){$2(".toolbar").style.display="flex";$2("#content").classList.remove("v2-content");return;}
  prep();
  if(view==="ingredients")renderIngredients();
  if(view==="planner")renderPlanner();
- if(view==="shopping")renderShopping();
+ if(view==="list")renderList();
 }
 function renderIngredients(){
  const list=[...ingredientMap.values()].filter(item=>(selectedCategory==="全部"||item.category===selectedCategory)&&(!foodQuery||item.name.includes(foodQuery)))
@@ -367,18 +408,31 @@ function renderPlanner(){
  +'<section class="v2-exclude" aria-label="本次排除食材类别"><div class="v2-exclude-head"><div><strong>本次不想吃</strong><span>可多选，再点一次取消，菜单自动更新</span></div><button type="button" class="v2-clear" data-v2-clear-exclusions '+(excluded.size?'':'disabled')+'>清除筛选'+(excluded.size?' · '+excluded.size:'')+'</button></div><div class="v2-exclude-options" role="group" aria-label="排除食材类别">'+["肉类","禽类","水产","蛋类","豆制品"].map(n=>'<button type="button" class="v2-exclude-chip '+(excluded.has(n)?"is-selected":"")+'" data-v2-exclude="'+n+'" aria-pressed="'+excluded.has(n)+'">'+(excluded.has(n)?"✓ ":"＋ ")+n+'</button>').join("")+'</div>'+(excluded.size?'<p class="v2-exclude-caption">已排除 '+[...excluded].map(esc).join("、")+'；若筛选后无法满足营养搭配，可取消部分选项。</p>':'')+'</section>'
  +'<div class="v2-sea-note"><strong>浙江海鲜时令 · '+month+'月</strong><p>'+(marineClosure(month)?'5月1日12时—9月16日12时属东海总体伏季休渔窗口（部分许可作业例外）；切勿将休渔理解为所有鱼禁止销售或食用。 ':'当前不在总体海洋伏季休渔窗口。 ')+'冬季带鱼、秋季梭子蟹、10月母大闸蟹、11月公大闸蟹可优先赏味。赏味期不是质量保证，具体仍取决于产地、养殖与捕捞方式。</p><small>参考：2026年浙江东海休渔通报、浙江日报与地方农业农村部门公开资料</small></div>'
  +'<div class="v2-generate-bar"><button type="button" data-v2-action="generate" class="v2-primary v2-generate-button">✦ 随机推荐三套</button><span>不满意？在这里再点一次，立即换三套。</span></div>'
- +(menus.length?'<div class="v2-menu-grid">'+menus.map((menu,i)=>'<article class="v2-menu"><div class="v2-line"><h3>方案 '+(i+1)+'</h3><span class="v2-good">'+month+'月 · 时令优先</span></div>'+menu.items.map((r,j)=>'<div class="v2-menu-item"><div><strong>'+esc(r.name)+'</strong><small>'+esc(r.base?"基础主食":r.roles.join(" · ")||r.category||"家常菜")+'</small><small class="v2-stock-hint">'+(recipeInventoryCoverage(r,ownedIngredients).missing.length?'需补充：'+esc(recipeInventoryCoverage(r,ownedIngredients).missing.join("、")):'✓ 库存齐全')+'</small></div><div class="v2-item-actions"><button data-v2-action="lock" data-menu="'+i+'" data-item="'+j+'" title="锁定">'+(menu.locked[j]?"🔒":"♧")+'</button>'+(r.base?"":'<button data-v2-action="swap" data-menu="'+i+'" data-item="'+j+'" '+(menu.locked[j]?"disabled":"")+'>换菜</button>')+'</div></div>').join("")+'<div class="v2-menu-actions"><button data-v2-action="reroll" data-menu="'+i+'">换一套</button><button data-v2-action="save" data-menu="'+i+'">收藏套餐</button><button data-v2-action="shop" data-menu="'+i+'" class="v2-primary">生成买菜清单</button></div></article>').join(" ")+'</div>':'<div class="empty">当前筛选条件下无法搭配含蔬菜、蛋白质和主食的套餐，请调整库存选择或排除条件。</div>')
- +'<div class="v2-saved"><h3>已保存的套餐</h3>'+(savedMenus.length?savedMenus.slice(0,5).map((s,i)=>'<div class="v2-line"><span>'+esc(s.names.join("、"))+'</span><button data-v2-action="saved" data-menu="'+i+'">加入清单</button></div>').join(""):"还没有收藏的套餐")+'</div>';
+ +(menus.length?'<div class="v2-menu-grid">'+menus.map((menu,i)=>'<article class="v2-menu"><div class="v2-line"><h3>方案 '+(i+1)+'</h3><span class="v2-good">'+month+'月 · 时令优先</span></div>'+menu.items.map((r,j)=>'<div class="v2-menu-item"><div><strong>'+esc(r.name)+'</strong><small>'+esc(r.base?"基础主食":r.roles.join(" · ")||r.category||"家常菜")+'</small><small class="v2-stock-hint">'+(recipeInventoryCoverage(r,ownedIngredients).missing.length?'需补充：'+esc(recipeInventoryCoverage(r,ownedIngredients).missing.join("、")):'✓ 库存齐全')+'</small></div><div class="v2-item-actions"><button data-v2-action="lock" data-menu="'+i+'" data-item="'+j+'" title="锁定">'+(menu.locked[j]?"🔒":"♧")+'</button>'+(r.base?"":'<button data-v2-action="swap" data-menu="'+i+'" data-item="'+j+'" '+(menu.locked[j]?"disabled":"")+'>换菜</button>')+'</div></div>').join("")+'<div class="v2-menu-actions"><button data-v2-action="reroll" data-menu="'+i+'">换一套</button><button data-v2-action="shop" data-menu="'+i+'" class="v2-primary">加入清单</button></div></article>').join(" ")+'</div>':'<div class="empty">当前筛选条件下无法搭配含蔬菜、蛋白质和主食的套餐，请调整库存选择或排除条件。</div>')
+;
  $2("#v2MonthSelect").onchange=e=>{month=Number(e.target.value);regenerate();};
  updatePantrySuggestions();
 }
-function renderShopping(){
- $2("#content").innerHTML='<div class="v2-intro">从配餐方案自动合并同名食材，可勾选、复制；没有统一克重的菜谱不生成虚假的采购数量。</div><div class="v2-shop-actions"><button data-v2-action="copy" class="v2-primary">复制清单</button><button data-v2-action="clear">清空</button></div>'
- +(shopping.length?'<div class="v2-shopping">'+shopping.map((x,i)=>'<div class="v2-shop-row"><label><input type="checkbox" data-v2-check="'+i+'" '+(x.done?"checked":"")+'> <span>'+esc(x.name)+'</span></label><button data-v2-action="remove" data-item="'+i+'" aria-label="删除">×</button></div>').join("")+'</div>':'<p class="empty">还没有食材，先去随机配餐生成一份吧。</p>');
+
+function renderList(){
+ $2("#content").innerHTML='<div class="v2-intro">已选菜品与待买食材集中管理。原来的今日点菜和购物清单数据都会保留。</div>'
+ +'<div class="v2-list-tabs" role="group" aria-label="清单内容">'
+ +'<button type="button" data-v2-action="list-tab" data-tab="dishes" class="'+(listTab==="dishes"?"on":"")+'" aria-pressed="'+(listTab==="dishes")+'">已选菜品 · '+order.length+'</button>'
+ +'<button type="button" data-v2-action="list-tab" data-tab="shopping" class="'+(listTab==="shopping"?"on":"")+'" aria-pressed="'+(listTab==="shopping")+'">待买食材 · '+shopping.length+'</button></div>';
+ if(listTab==="shopping"){renderShopping(true);return;}
+ $2("#content").innerHTML+=order.length
+  ?'<div class="v2-dishes">'+order.map(id=>{
+    const r=recipes[id];if(!r)return "";
+    return '<div class="v2-dish-row"><button class="v2-dish-title" data-v2-action="detail" data-item="'+id+'">'+esc(r.name)+'</button><span>'+esc(r.ingredients||"")+'</span><button type="button" data-order="'+id+'" aria-label="移除'+esc(r.name)+'">移除</button></div>';
+   }).join("")+'</div><div class="v2-list-footer"><button class="v2-primary" data-v2-action="list-shop">汇总待买食材</button></div>'
+  :'<div class="empty">还没有选菜。可从菜谱详情或随机配餐加入清单。</div>';
 }
-document.addEventListener("click",e=>{
- const x=e.target.closest("#v2Nav button");if(x){$2(".toolbar").style.display="none";}
-});
+
+function renderShopping(embedded=false){
+ const markup='<div class="v2-intro">从配餐方案自动合并同名食材，可勾选、复制；没有统一克重的菜谱不生成虚假的采购数量。</div><div class="v2-shop-actions"><button data-v2-action="copy" class="v2-primary">复制清单</button><button data-v2-action="clear">清空</button></div>'
+ +(shopping.length?'<div class="v2-shopping">'+shopping.map((x,i)=>'<div class="v2-shop-row"><label><input type="checkbox" data-v2-check="'+i+'" '+(x.done?"checked":"")+'> <span>'+esc(x.name)+'</span></label><button data-v2-action="remove" data-item="'+i+'" aria-label="删除">×</button></div>').join("")+'</div>':'<p class="empty">还没有食材，先去随机配餐生成一份吧。</p>');
+ if(embedded)$2("#content").innerHTML+=markup;else $2("#content").innerHTML=markup;
+}
 mountNavigation();
 regenerate();
 window.CookbookV2={parseIngredients,classify,ingredientMap,generate,countCovered,modeled,SEAFOOD_TIMING,FISHING_RULES,recipeInventoryCoverage};
