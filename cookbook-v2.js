@@ -156,7 +156,14 @@ function matchesOwned(name) {
 function allowedByOwnedCategories(r) {
  if (!ownedOnly || !ownedIngredients.size) return true;
  const categories=new Set([...ownedIngredients].map(ingredientCategory));
- return r.refs.every(ref=>ref.choices.some(n=>!categories.has(ingredientCategory(n)) || matchesOwned(n)));
+ const proteinCategories=new Set(["肉类","禽类","水产","蛋类","豆制品"]);
+ const hasSelectedProtein=[...categories].some(category=>proteinCategories.has(category));
+ return r.refs.every(ref=>ref.choices.some(name=>{
+  const category=ingredientCategory(name);
+  // 选择牛肉时限制整套餐的蛋白质来源，蔬菜和主食仍自由搭配。
+  if(hasSelectedProtein&&proteinCategories.has(category))return matchesOwned(name);
+  return !categories.has(category)||matchesOwned(name);
+ }));
 }
 function eligible(r) {
  return !r.condiment &&
@@ -349,7 +356,7 @@ function renderPantry(){
   +'<div id="v2PantrySuggestions" class="v2-pantry-suggestions"></div>'
   +'<div class="v2-pantry-owned">'+(stock.length?stock.map(n=>'<button type="button" data-v2-pantry-item="'+esc(n)+'" title="移除库存食材">'+esc(n)+' ×</button>').join(""):'<span class="v2-intro">还没有添加食材，可先从下方常用食材选择。</span>')+'</div>'
   +'<div class="v2-pantry-modes" role="group" aria-label="库存匹配模式"><button type="button" class="'+(!ownedOnly?'on':'')+'" data-v2-pantry-mode="prefer" aria-pressed="'+!ownedOnly+'">优先用已有食材</button><button type="button" class="'+(ownedOnly?'on':'')+'" data-v2-pantry-mode="only" aria-pressed="'+ownedOnly+'">只用已有食材</button></div>'
-  +'<p class="v2-exclude-caption">“优先”尽量利用库存；“只用”仅限制<strong>你已选择的食材类别</strong>。例如选了牛肉，肉类菜只选牛肉（含牛腩等部位），未选择的蔬菜、主食类别仍可随机搭配。库存保存在当前浏览器。</p></section>';
+  +'<p class="v2-exclude-caption">“优先”尽量利用库存；“只用”仅限制<strong>你已选择的食材类别</strong>。例如只选牛肉，蛋白菜只使用牛肉（含牛腩等部位），蔬菜、主食仍随机搭配；选多种蛋白质则都可参与推荐。库存保存在当前浏览器。</p></section>';
 }
 
 function renderPlanner(){
