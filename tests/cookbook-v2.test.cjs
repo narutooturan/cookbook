@@ -47,10 +47,14 @@ test('300次随机配餐均满足三种营养角色与菜品去重',()=>{
   assert.ok(menu.items.every(x=>!x.condiment));
  }
 });
-test('购物清单和套餐存储功能已集成',()=>{
+test('统一清单功能并移除收藏套餐入口',()=>{
  assert.ok(source.includes('function addShopping'));
+ assert.ok(source.includes('function addMenuToList'));
+ assert.ok(source.includes('function renderList'));
+ assert.ok(source.includes('function syncShoppingFromOrder'));
  assert.ok(source.includes('persistShopping'));
- assert.ok(source.includes('savedMenus'));
+ assert.ok(!source.includes('savedMenus'));
+ assert.ok(!source.includes('收藏套餐'));
  assert.ok(source.includes('data-v2-action="lock"'));
  assert.ok(source.includes('data-v2-action="swap"'));
 });
@@ -131,4 +135,25 @@ test('随机生成按钮位于配置末尾，紧挨方案区域',()=>{
  assert.ok(btn>excludes);
  assert.ok(menus>btn);
  assert.equal((ui.match(/data-v2-action="generate"/g)||[]).length,1);
+});
+
+test('五个主菜单复用同一状态并响应 PC 和移动端',()=>{
+ const names=['recipes','ingredients','planner','list','favorites'];
+ const menu=source.slice(source.indexOf('const MAIN_MENU=['),source.indexOf('function navigateApp('));
+ assert.equal((menu.match(/id:"/g)||[]).length,5);
+ for(const name of names) assert.ok(menu.includes('id:"'+name+'"'));
+ assert.ok(source.includes('data-v2-page='));
+ assert.ok(source.includes('bottom.innerHTML=MAIN_MENU.map'));
+ assert.ok(source.includes('nav.innerHTML=MAIN_MENU.map'));
+ assert.ok(source.includes('data-v2-page="tips"'));
+});
+test('我的清单保留旧点菜数据、支持菜品与待买食材两栏',()=>{
+ const ui=source.slice(source.indexOf('function renderList(){'),source.indexOf('function renderShopping('));
+ assert.ok(ui.includes('order.map('));
+ assert.ok(ui.includes('listTab==="dishes"'));
+ assert.ok(ui.includes('listTab==="shopping"'));
+ assert.ok(ui.includes('data-order='));
+ assert.ok(ui.includes('data-v2-action="list-shop"'));
+ assert.ok(source.includes("save();"));
+ assert.ok(source.includes('storage.get("shopping",[])'));
 });
