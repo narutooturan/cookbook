@@ -434,8 +434,8 @@ function renderList(){
 }
 
 function renderShopping(embedded=false){
- const markup='<div class="v2-intro">从配餐方案自动合并同名食材，可勾选、复制；没有统一克重的菜谱不生成虚假的采购数量。</div><div class="v2-shop-actions"><button data-v2-action="copy" class="v2-primary">复制清单</button><button data-v2-action="clear">清空</button></div>'
- +(shopping.length?'<div class="v2-shopping">'+shopping.map((x,i)=>'<div class="v2-shop-row"><label><input type="checkbox" data-v2-check="'+i+'" '+(x.done?"checked":"")+'> <span>'+esc(x.name)+'</span></label><button data-v2-action="remove" data-item="'+i+'" aria-label="删除">×</button></div>').join("")+'</div>':'<p class="empty">还没有食材，先去随机配餐生成一份吧。</p>');
+ const markup='<div class="v2-intro">从配餐方案自动合并同名食材，可勾选、复制；没有统一克重的菜谱不生成虚假的采购数量。</div>'
+ +(shopping.length?'<div class="v2-shopping">'+shopping.map((x,i)=>'<div class="v2-shop-row"><label><input type="checkbox" data-v2-check="'+i+'" '+(x.done?"checked":"")+'> <span>'+esc(x.name)+'</span></label><button data-v2-action="remove" data-item="'+i+'" aria-label="删除">×</button></div>').join("")+'</div><div class="v2-list-footer"><button type="button" class="v2-clear-dishes" data-v2-action="clear">清空食材</button><button type="button" class="v2-primary" data-v2-action="copy">复制清单</button></div>':'<p class="empty">还没有食材，先去随机配餐生成一份吧。</p>');
  if(embedded)$2("#content").innerHTML+=markup;else $2("#content").innerHTML=markup;
 }
 mountNavigation();
