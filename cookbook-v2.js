@@ -17,13 +17,12 @@ const ALIAS = {
 "肥肠":"大肠","翅中":"鸡翅","鸡翅中":"鸡翅","鸡":"鸡肉","鸭":"鸭肉",
 "藕":"莲藕","笋丝":"春笋","笋":"春笋","蒜苔":"蒜薹","白萝卜丝":"白萝卜",
 "萝卜丝":"白萝卜","萝卜":"白萝卜","青椒":"青椒","葱":"大葱","姜":"生姜","蒜":"大蒜",
-"娃娃菜":"白菜","海蛎":"生蚝","虾仁":"虾","斑节虾":"虾","河虾":"虾",
+"娃娃菜":"白菜","海蛎":"生蚝","虾仁":"虾","斑节虾":"斑节虾","河虾":"河虾",
 "包浆豆腐":"豆腐","豆腐泡":"油豆腐","香菇":"菌菇","蘑菇":"菌菇","蟹味菇":"菌菇",
 "高笋":"茭白","番薯":"红薯","紫菜":"紫菜","裙带菜":"海带",
 "牛坑腩":"牛腩","牛肋条":"牛肉","牛排":"牛肉","羊腩":"羊肉","羊排":"羊肉",
 "猪大排":"猪肉","排骨":"猪排骨","筒骨":"猪排骨","肉饼":"猪肉",
-"油豆腐":"油豆腐","黄鱼鲞":"黄鱼","鲳鱼":"鱼","黄鱼":"鱼","鲈鱼":"鱼",
-"鲫鱼":"鱼","带鱼":"鱼","鳗鱼":"鱼","笋壳鱼":"鱼","杂鱼":"鱼",
+"油豆腐":"油豆腐","黄鱼鲞":"黄鱼鲞","笋壳鱼":"笋壳鱼","杂鱼":"杂鱼",
 "乌冬面":"面条","意面":"面条","米饭":"大米","糯米":"大米","粥底":"大米",
 "海蛎":"生蚝","虾皮":"虾皮","生姜":"生姜"
 };
@@ -32,15 +31,57 @@ const GROUPS = {
 "菌菇":["菌菇","虫草花"],
 "肉类":["猪肉","猪五花","猪里脊","猪肉末","猪排骨","大肠","猪肚","猪蹄","牛肉","牛腩","牛肉丸","羊肉","腊肉","腊肠","咸肉","酱油肉","卤肉"],
 "禽类":["鸡肉","鸡翅","鸡爪","鸭肉","鸭舌"],
-"水产":["鱼","虾","虾皮","生蚝","蛤蜊","墨鱼","墨鱼干","鲍鱼","青蟹","田蟹","海瓜子","水潺","蛏子","红绿头","沙蒜","温州鱼饼","明珠鱼片"],
+"水产":["鱼","带鱼","黄鱼","黄鱼鲞","鲈鱼","鲳鱼","鲫鱼","鳗鱼","笋壳鱼","杂鱼","虾","斑节虾","河虾","虾皮","大闸蟹","梭子蟹","生蚝","蛤蜊","墨鱼","墨鱼干","鲍鱼","青蟹","田蟹","海瓜子","水潺","蛏子","红绿头","沙蒜","温州鱼饼","明珠鱼片"],
 "蛋类":["鸡蛋","皮蛋"],
 "豆制品":["豆腐","豆腐干","油豆腐","黄豆","绿豆"],
 "谷薯":["大米","面条","粉丝","年糕","面粉","饺子皮","红薯","土豆","芋艿","山药"],
 "水果坚果":["苹果","柠檬","桂圆","荔枝干","葡萄干","提子","板栗","坚果","牛油果"],
 "调味加工":["榨菜","咸菜","雪菜","梅干菜","辣白菜","酸菜","腐乳","紫菜","海带","菜干","白芝麻","大蒜","生姜","大葱","八角","水"]
 };
+
+/* 浙江海鲜赏味窗口为推荐偏好，不能推导实际产地、合法捕捞方式或即时供应。 */
+const SEAFOOD_TIMING={
+ "带鱼":{months:[11,12,1,2],peak:[12,1],note:"舟山冬汛，冬至前后通常较肥美",kind:"marine"},
+ "黄鱼":{months:[9,10,11,12],peak:[9,10],note:"开渔后海捕供应较多；养殖黄鱼另计",kind:"marine"},
+ "鲳鱼":{months:[8,9,10,11],peak:[9,10],note:"秋季开渔后常见，肉质与个体差异较大",kind:"marine"},
+ "梭子蟹":{months:[8,9,10,11],peak:[9,10],note:"东海开渔后集中上市，具体受专项捕捞影响",kind:"marine"},
+ "大闸蟹":{months:[9,10,11,12],peak:[10,11],note:"淡水养殖河蟹；10月母蟹、11月公蟹通常较佳",kind:"freshwater"},
+ "斑节虾":{months:[8,9,10],peak:[9],note:"视养殖和捕捞来源而定",kind:"marine"},
+ "河虾":{months:[4,5,6,7,8,9],peak:[5,6],note:"淡水河虾，非海洋休渔对象",kind:"freshwater"},
+ "墨鱼":{months:[9,10,11],peak:[9,10],note:"秋季参考赏味期，来源需要核实",kind:"marine"},
+ "生蚝":{months:[10,11,12,1,2,3],peak:[11,12,1],note:"冷季赏味偏好，养殖品种全年可供应",kind:"farmed"},
+ "鲈鱼":{months:[],peak:[],note:"养殖鲈鱼全年常见，野生品种和来源需区别",kind:"mixed"},
+ "鲫鱼":{months:[],peak:[],note:"淡水鱼，不受东海海洋伏季休渔的统一限制",kind:"freshwater"},
+ "黄鱼鲞":{months:[],peak:[],note:"加工干制品，不以鲜鱼赏味期判定",kind:"processed"}
+};
+const FISHING_RULES={
+ region:"浙江所属东海海域",year:2026,
+ usualClosure:"5月1日12:00—9月16日12:00",
+ restrictedSales:"5月8日起，限制销售规定范围内的8种海洋捕捞冰鲜或活体水产品",
+ exceptions:"钓具作业与依法许可的专项捕捞存在例外；2026年专项开捕曾受台风推迟",
+ sources:[
+ "https://www.chinanews.com/sh/2026/05-01/10614396.shtml",
+ "https://zj.people.com.cn/n2/2026/0812/c186327-41665461.html",
+ "https://zjnews.zjol.com.cn/zjnews/202312/t20231207_26497547.shtml",
+ "https://nyncw.sh.gov.cn/mtbd/20260929/e6e4a19489bb460cac70b7ff698c0f43.html"
+ ]
+};
+function seaTimingFor(r){return (r.refs||[]).flatMap(ref=>ref.choices).map(n=>({name:n,...SEAFOOD_TIMING[n]})).filter(x=>x.kind);}
+function marineClosure(monthNumber){return monthNumber>=5&&monthNumber<=9;}
+function ingredientInventoryMatches(recipe,owned){
+ return recipe.refs?.filter(ref=>ref.choices.some(choice=>owned.has(choice)))||[];
+}
+function recipeInventoryCoverage(recipe,owned){
+ const refs=recipe.refs||[];if(!refs.length)return {hits:0,total:0,missing:[]};
+ const missing=refs.filter(ref=>!ref.choices.some(choice=>owned.has(choice))).map(ref=>ref.name);
+ return {hits:refs.length-missing.length,total:refs.length,missing};
+}
+function seasonalSeafoodBonus(recipe,monthNumber){
+ return seaTimingFor(recipe).reduce((score,item)=>score+(item.peak.includes(monthNumber)?18:item.months.includes(monthNumber)?8:0),0);
+}
+
 const groups = new Map(Object.entries(GROUPS).flatMap(([g,items])=>items.map(item=>[item,g])));
-const strongProtein = new Set(["猪肉","猪五花","猪里脊","猪肉末","猪排骨","猪肚","大肠","牛肉","牛腩","牛肉丸","羊肉","鸡肉","鸡翅","鸭肉","鸭舌","鱼","虾","生蚝","蛤蜊","墨鱼","墨鱼干","鲍鱼","青蟹","田蟹","海瓜子","水潺","蛏子","沙蒜","鸡蛋","皮蛋","豆腐","豆腐干","油豆腐","黄豆","温州鱼饼","明珠鱼片"]);
+const strongProtein = new Set(["猪肉","猪五花","猪里脊","猪肉末","猪排骨","猪肚","大肠","牛肉","牛腩","牛肉丸","羊肉","鸡肉","鸡翅","鸭肉","鸭舌","鱼","带鱼","黄鱼","黄鱼鲞","鲈鱼","鲳鱼","鲫鱼","鳗鱼","笋壳鱼","杂鱼","虾","斑节虾","河虾","大闸蟹","梭子蟹","生蚝","蛤蜊","墨鱼","墨鱼干","鲍鱼","青蟹","田蟹","海瓜子","水潺","蛏子","沙蒜","鸡蛋","皮蛋","豆腐","豆腐干","油豆腐","黄豆","温州鱼饼","明珠鱼片"]);
 const vegetable = new Set([...GROUPS["蔬菜"],...GROUPS["菌菇"]].filter(x=>!["洋葱","大葱","青豆"].includes(x)));
 const starchy = new Set(GROUPS["谷薯"]);
 const weakVegetable = new Set(["洋葱","大葱","青豆","豆芽","绿豆芽","菌菇","春笋","冬笋"]);
@@ -82,12 +123,15 @@ for(const r of modeled)for(const item of r.refs)for(const n of item.choices){
 }
 const pantry=[{name:"米饭",ingredients:["大米"],roles:["主食"],base:true}];
 let view=null, month=new Date().getMonth()+1, familyCount=2, selectedCategory="全部", foodQuery="", excluded=new Set();
+let ownedIngredients=new Set(storage.get("ownedIngredients",[])),ownedOnly=false,pantryQuery="";
+const saveOwned=()=>storage.set("ownedIngredients",[...ownedIngredients]);
 let menus=[], shopping=storage.get("shopping",[]), savedMenus=storage.get("savedMenus",[]);
 const $2=s=>document.querySelector(s);
 function esc(s){return escapeHTML(String(s??""));}
 function seasonScore(r){
  const active=r.vegs.filter(n=>seasonal(n).includes(month)).length;
- return active*12 + r.vegs.length*3-(r.processing?8:0);
+ const coverage=recipeInventoryCoverage(r,ownedIngredients);
+ return active*12 + seasonalSeafoodBonus(r,month)+r.vegs.length*3-(r.processing?8:0)+coverage.hits*35-coverage.missing.length*(ownedOnly?0:3);
 }
 function pickWeighted(list, fn){
  if(!list.length)return null;
@@ -98,7 +142,8 @@ function pickWeighted(list, fn){
  return weighted.at(-1).x;
 }
 function eligible(r) {
- return !r.condiment && !r.refs.some(ref=>ref.choices.some(n=>excluded.has(n)||excluded.has(ingredientCategory(n))));
+ return !r.condiment && r.refs.every(ref=>ref.choices.some(n=>!excluded.has(n)&&!excluded.has(ingredientCategory(n))))
+  && (!ownedOnly||recipeInventoryCoverage(r,ownedIngredients).missing.length===0);
 }
 function countCovered(items){
  return {protein:items.some(x=>x.proteins?.length),veg:items.some(x=>x.vegs?.length),
@@ -116,7 +161,7 @@ function generate(preserved=[]){
  };
  if(!chosen.some(r=>r.proteins?.length))take(r=>r.proteins.length && !r.soup,r=>r.proteins.length*4);
  if(!chosen.some(r=>r.vegs?.length))take(r=>r.vegs.length && !r.soup,r=>r.vegs.length*8);
- if(!chosen.some(r=>r.starch?.length))chosen.push({...pantry[0],id:"base-rice",name:"米饭（基础搭配）",names:["大米"],refs:[{name:"大米",choices:["大米"]}],proteins:[],vegs:[],starch:["大米"],soup:false});
+ if(!chosen.some(r=>r.starch?.length)&&(!ownedOnly||ownedIngredients.has("大米")))chosen.push({...pantry[0],id:"base-rice",name:"米饭（基础搭配）",names:["大米"],refs:[{name:"大米",choices:["大米"]}],proteins:[],vegs:[],starch:["大米"],soup:false});
  if(chosen.length<3)take(r=>r.soup&&r.proteins.length+r.vegs.length>0);
  if(chosen.length<3)take(r=>r.vegs.length||r.proteins.length);
  if(chosen.length<3)return null;
@@ -183,6 +228,14 @@ document.addEventListener("click",e=>{
   regenerate();
   return;
  }
+ const stock=e.target.closest("[data-v2-pantry-item]");
+ if(stock){ownedIngredients.delete(stock.dataset.v2PantryItem);saveOwned();regenerate();return;}
+ if(e.target.closest("[data-v2-clear-pantry]")){ownedIngredients.clear();saveOwned();regenerate();return;}
+ if(e.target.closest("[data-v2-add-pantry]")){addPantryFromInput();return;}
+ const suggestion=e.target.closest("[data-v2-pantry-suggestion]");
+ if(suggestion){ownedIngredients.add(suggestion.dataset.v2PantrySuggestion);pantryQuery="";saveOwned();regenerate();return;}
+ const mode=e.target.closest("[data-v2-pantry-mode]");
+ if(mode){ownedOnly=mode.dataset.v2PantryMode==="only";regenerate();return;}
  if(e.target.closest("[data-v2-clear-exclusions]")){
   excluded.clear();
   regenerate();
@@ -216,14 +269,17 @@ document.addEventListener("change",e=>{
  if(el.id==="v2People"){familyCount=Number(el.value);renderV2();}
  if(el.matches("[data-v2-check]")){shopping[Number(el.dataset.v2Check)].done=el.checked;persistShopping();}
 });
+document.addEventListener("keydown",e=>{if(e.target.id==="v2PantryInput"&&e.key==="Enter"){e.preventDefault();addPantryFromInput();}});
 document.addEventListener("input",e=>{
+ if(e.target.id==="v2PantryInput"){pantryQuery=e.target.value;updatePantrySuggestions();}
  if(e.target.id==="v2Search"){const cursor=e.target.selectionStart;foodQuery=e.target.value;renderIngredients();const replacement=$2("#v2Search");replacement?.focus();if(cursor!==null)replacement?.setSelectionRange(cursor,cursor);}
 });
 function persistShopping(){storage.set("shopping",shopping);}
 function addShopping(menu){
  const unique=new Set(shopping.map(x=>x.name));
  for(const r of menu.items)for(const item of r.refs){
-   const n=item.name;if(n&&!unique.has(n)){shopping.push({name:n,done:false});unique.add(n);}
+   const n=item.choices.find(c=>ownedIngredients.has(c))||item.name;
+   if(n&&!unique.has(n)&&!ownedIngredients.has(n)){shopping.push({name:n,done:false});unique.add(n);}
  }
  persistShopping();
 }
@@ -253,14 +309,42 @@ function renderIngredients(){
  +(list.length?"":'<p class="empty">未找到对应食材</p>');
  $2("#v2MonthSelect").onchange=e=>{month=Number(e.target.value);renderIngredients();};
 }
+
+function addPantryFromInput(){
+ const input=$2("#v2PantryInput");
+ const tokens=String(input?.value||pantryQuery).split(/[、,，;\n]/).map(x=>normalize(x)).filter(Boolean);
+ const known=new Set(ingredientMap.keys());
+ for(const name of tokens){if(known.has(name)||name==="大米")ownedIngredients.add(name);}
+ pantryQuery="";saveOwned();regenerate();
+}
+function updatePantrySuggestions(){
+ const holder=$2("#v2PantrySuggestions");if(!holder)return;
+ const q=pantryQuery.trim();
+ const suggestions=[...ingredientMap.keys()].filter(n=>!ownedIngredients.has(n)&&(!q||n.includes(q))).slice(0,12);
+ holder.innerHTML=suggestions.map(n=>'<button type="button" data-v2-pantry-suggestion="'+esc(n)+'">'+esc(n)+'</button>').join("");
+}
+function renderPantry(){
+ const stock=[...ownedIngredients].sort((a,b)=>a.localeCompare(b,"zh"));
+ return '<section class="v2-exclude v2-pantry" aria-label="家里已有食材">'
+  +'<div class="v2-exclude-head"><div><strong>家里已有食材</strong><span>输入或点击食材加入库存，之后优先用家中现有食材配餐</span></div><button type="button" class="v2-clear" data-v2-clear-pantry '+(stock.length?'':'disabled')+'>清空库存</button></div>'
+  +'<div class="v2-pantry-entry"><input id="v2PantryInput" class="search" placeholder="例如：鸡蛋、青菜、带鱼" autocomplete="off" value="'+esc(pantryQuery)+'"><button type="button" data-v2-add-pantry class="v2-primary">加入食材</button></div>'
+  +'<div id="v2PantrySuggestions" class="v2-pantry-suggestions"></div>'
+  +'<div class="v2-pantry-owned">'+(stock.length?stock.map(n=>'<button type="button" data-v2-pantry-item="'+esc(n)+'" title="移除库存食材">'+esc(n)+' ×</button>').join(""):'<span class="v2-intro">还没有添加食材，可先从下方常用食材选择。</span>')+'</div>'
+  +'<div class="v2-pantry-modes" role="group" aria-label="库存匹配模式"><button type="button" class="'+(!ownedOnly?'on':'')+'" data-v2-pantry-mode="prefer" aria-pressed="'+!ownedOnly+'">优先用已有食材</button><button type="button" class="'+(ownedOnly?'on':'')+'" data-v2-pantry-mode="only" aria-pressed="'+ownedOnly+'">只用已有食材</button></div>'
+  +'<p class="v2-exclude-caption">“优先”允许补买缺少食材；“只用”需库存足以组成含蔬菜、蛋白质、主食的套餐。库存保存在当前浏览器。</p></section>';
+}
+
 function renderPlanner(){
  $2("#content").innerHTML='<div class="v2-intro">每次为你准备 3 套不同菜单。每套确保包含蔬菜、蛋白质和主食；不计算未经核实的热量或克重。</div>'
  +'<div class="v2-controls"><label>月份 <select id="v2MonthSelect">'+Array.from({length:12},(_,i)=>'<option value="'+(i+1)+'" '+(month===i+1?"selected":"")+'>'+(i+1)+'月</option>').join("")+'</select></label><label>人数 <select id="v2People">'+[1,2,3,4,5,6].map(n=>'<option value="'+n+'" '+(n===familyCount?"selected":"")+'>'+n+' 人</option>').join("")+'</select></label><button data-v2-action="generate" class="v2-primary">✦ 随机推荐三套</button></div>'
  +'<div class="v2-intro">人数用于记录用餐场景；由于原菜谱尚无统一用量，暂不推算具体采购克数。</div>'
+ +renderPantry()
  +'<section class="v2-exclude" aria-label="本次排除食材类别"><div class="v2-exclude-head"><div><strong>本次不想吃</strong><span>可多选，再点一次取消，菜单自动更新</span></div><button type="button" class="v2-clear" data-v2-clear-exclusions '+(excluded.size?'':'disabled')+'>清除筛选'+(excluded.size?' · '+excluded.size:'')+'</button></div><div class="v2-exclude-options" role="group" aria-label="排除食材类别">'+["肉类","禽类","水产","蛋类","豆制品"].map(n=>'<button type="button" class="v2-exclude-chip '+(excluded.has(n)?"is-selected":"")+'" data-v2-exclude="'+n+'" aria-pressed="'+excluded.has(n)+'">'+(excluded.has(n)?"✓ ":"＋ ")+n+'</button>').join("")+'</div>'+(excluded.size?'<p class="v2-exclude-caption">已排除 '+[...excluded].map(esc).join("、")+'；若筛选后无法满足营养搭配，可取消部分选项。</p>':'')+'</section>'
+ +'<div class="v2-sea-note"><strong>浙江海鲜时令 · '+month+'月</strong><p>'+(marineClosure(month)?'5月1日12时—9月16日12时属东海总体伏季休渔窗口（部分许可作业例外）；切勿将休渔理解为所有鱼禁止销售或食用。 ':'当前不在总体海洋伏季休渔窗口。 ')+'冬季带鱼、秋季梭子蟹、10月母大闸蟹、11月公大闸蟹可优先赏味。赏味期不是质量保证，具体仍取决于产地、养殖与捕捞方式。</p><small>参考：2026年浙江东海休渔通报、浙江日报与地方农业农村部门公开资料</small></div>'
  +(menus.length?'<div class="v2-menu-grid">'+menus.map((menu,i)=>'<article class="v2-menu"><div class="v2-line"><h3>方案 '+(i+1)+'</h3><span class="v2-good">'+month+'月 · 时令优先</span></div>'+menu.items.map((r,j)=>'<div class="v2-menu-item"><div><strong>'+esc(r.name)+'</strong><small>'+esc(r.base?"基础主食":r.roles.join(" · ")||r.category||"家常菜")+'</small></div><div class="v2-item-actions"><button data-v2-action="lock" data-menu="'+i+'" data-item="'+j+'" title="锁定">'+(menu.locked[j]?"🔒":"♧")+'</button>'+(r.base?"":'<button data-v2-action="swap" data-menu="'+i+'" data-item="'+j+'" '+(menu.locked[j]?"disabled":"")+'>换菜</button>')+'</div></div>').join("")+'<div class="v2-menu-actions"><button data-v2-action="reroll" data-menu="'+i+'">换一套</button><button data-v2-action="save" data-menu="'+i+'">收藏套餐</button><button data-v2-action="shop" data-menu="'+i+'" class="v2-primary">生成买菜清单</button></div></article>').join(" ")+'</div>':'<div class="empty">当前条件下暂无符合全部营养角色的套餐，请调整条件。</div>')
  +'<div class="v2-saved"><h3>已保存的套餐</h3>'+(savedMenus.length?savedMenus.slice(0,5).map((s,i)=>'<div class="v2-line"><span>'+esc(s.names.join("、"))+'</span><button data-v2-action="saved" data-menu="'+i+'">加入清单</button></div>').join(""):"还没有收藏的套餐")+'</div>';
  $2("#v2MonthSelect").onchange=e=>{month=Number(e.target.value);regenerate();};
+ updatePantrySuggestions();
 }
 function renderShopping(){
  $2("#content").innerHTML='<div class="v2-intro">从配餐方案自动合并同名食材，可勾选、复制；没有统一克重的菜谱不生成虚假的采购数量。</div><div class="v2-shop-actions"><button data-v2-action="copy" class="v2-primary">复制清单</button><button data-v2-action="clear">清空</button></div>'
@@ -271,5 +355,5 @@ document.addEventListener("click",e=>{
 });
 mountNavigation();
 regenerate();
-window.CookbookV2={parseIngredients,classify,ingredientMap,generate,countCovered,modeled};
+window.CookbookV2={parseIngredients,classify,ingredientMap,generate,countCovered,modeled,SEAFOOD_TIMING,FISHING_RULES,recipeInventoryCoverage};
 })();
