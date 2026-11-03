@@ -315,6 +315,7 @@ document.addEventListener("click",e=>{
  if(action==="detail"){const recipe=modeled.find(x=>x.id===ii);if(recipe)openDetail(recipe.id);}
  if(action==="list-tab"){listTab=a.dataset.tab;renderV2();}
  if(action==="list-shop"){syncShoppingFromOrder();listTab="shopping";renderV2();}
+ if(action==="clear-dishes"&&order.length&&window.confirm("确定清空全部 "+order.length+" 道已选菜品吗？\n这不会删除收藏、已有食材或待买食材。")){order=[];save();render();}
 });
 document.addEventListener("change",e=>{
  const el=e.target;
@@ -428,7 +429,7 @@ function renderList(){
   ?'<div class="v2-dishes">'+order.map(id=>{
     const r=recipes[id];if(!r)return "";
     return '<div class="v2-dish-row"><button class="v2-dish-title" data-v2-action="detail" data-item="'+id+'">'+esc(r.name)+'</button><span>'+esc(r.ingredients||"")+'</span><button type="button" data-order="'+id+'" aria-label="移除'+esc(r.name)+'">移除</button></div>';
-   }).join("")+'</div><div class="v2-list-footer"><button class="v2-primary" data-v2-action="list-shop">汇总待买食材</button></div>'
+   }).join("")+'</div><div class="v2-list-footer"><button type="button" class="v2-clear-dishes" data-v2-action="clear-dishes">清空菜品</button><button type="button" class="v2-primary" data-v2-action="list-shop">汇总待买食材</button></div>'
   :'<div class="empty">还没有选菜。可从菜谱详情或随机配餐加入清单。</div>';
 }
 
