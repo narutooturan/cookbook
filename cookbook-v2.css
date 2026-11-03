@@ -70,3 +70,10 @@
  .v2-dish-title{max-width:48%;font-size:13px}
  .v2-dish-row>span{font-size:11px}
 }
+
+/* 已选菜品：清空操作与汇总按钮并列，保持原有家庭菜谱风格 */
+.v2-list-footer{display:flex;justify-content:flex-end;align-items:center;gap:10px}
+.v2-clear-dishes{background:#fffdf8;color:#a46e58;border:1px solid #e7dfd1;border-radius:10px;padding:11px 17px;cursor:pointer;font:inherit}
+.v2-clear-dishes:hover{background:#faf0e8;border-color:#d6ae9b}
+.v2-clear-dishes:focus-visible{outline:3px solid #9cad89;outline-offset:2px}
+@media(max-width:650px){.v2-list-footer{flex-wrap:wrap}.v2-list-footer button{flex:1;min-width:0}}
