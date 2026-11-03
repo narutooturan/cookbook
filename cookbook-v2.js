@@ -141,9 +141,27 @@ function pickWeighted(list, fn){
  for(const {x,w} of weighted){p-=w;if(p<=0)return x;}
  return weighted.at(-1).x;
 }
+function stockVariant(name) {
+ if (ingredientCategory(name)==="肉类") {
+  if (/^牛/.test(name)) return "beef";
+  if (/^(猪|大肠|排骨|五花|肥肠|腊肉|腊肠|咸肉|酱油肉|卤肉)/.test(name)) return "pork";
+  if (/^羊/.test(name)) return "lamb";
+ }
+ return name;
+}
+function matchesOwned(name) {
+ return ownedIngredients.has(name) ||
+  (ingredientCategory(name)==="肉类" && [...ownedIngredients].some(x=>ingredientCategory(x)==="肉类" && stockVariant(x)===stockVariant(name)));
+}
+function allowedByOwnedCategories(r) {
+ if (!ownedOnly || !ownedIngredients.size) return true;
+ const categories=new Set([...ownedIngredients].map(ingredientCategory));
+ return r.refs.every(ref=>ref.choices.some(n=>!categories.has(ingredientCategory(n)) || matchesOwned(n)));
+}
 function eligible(r) {
- return !r.condiment && r.refs.every(ref=>ref.choices.some(n=>!excluded.has(n)&&!excluded.has(ingredientCategory(n))))
-  && (!ownedOnly||recipeInventoryCoverage(r,ownedIngredients).missing.length===0);
+ return !r.condiment &&
+  r.refs.every(ref=>ref.choices.some(n=>!excluded.has(n)&&!excluded.has(ingredientCategory(n)))) &&
+  allowedByOwnedCategories(r);
 }
 function countCovered(items){
  return {protein:items.some(x=>x.proteins?.length),veg:items.some(x=>x.vegs?.length),
@@ -161,10 +179,10 @@ function generate(preserved=[]){
  };
  if(!chosen.some(r=>r.proteins?.length))take(r=>r.proteins.length && !r.soup,r=>r.proteins.length*4);
  if(!chosen.some(r=>r.vegs?.length))take(r=>r.vegs.length && !r.soup,r=>r.vegs.length*8);
- if(!chosen.some(r=>r.starch?.length)&&(!ownedOnly||ownedIngredients.has("大米")))chosen.push({...pantry[0],id:"base-rice",name:"米饭（基础搭配）",names:["大米"],refs:[{name:"大米",choices:["大米"]}],proteins:[],vegs:[],starch:["大米"],soup:false});
+ if(!chosen.some(r=>r.starch?.length))chosen.push({...pantry[0],id:"base-rice",name:"米饭（基础搭配）",names:["大米"],refs:[{name:"大米",choices:["大米"]}],proteins:[],vegs:[],starch:["大米"],soup:false});
  if(chosen.length<3)take(r=>r.soup&&r.proteins.length+r.vegs.length>0);
  if(chosen.length<3)take(r=>r.vegs.length||r.proteins.length);
- if(chosen.length<3&&!ownedOnly)return null;
+ if(chosen.length<3)return null;
  const roles=countCovered(chosen);
  if(!roles.protein||!roles.veg||!roles.starch)return null;
  return {items:chosen.slice(0,4),locked:chosen.map(x=>preserved.includes(x))};
@@ -279,7 +297,7 @@ function addShopping(menu){
  const unique=new Set(shopping.map(x=>x.name));
  for(const r of menu.items)for(const item of r.refs){
    const n=item.choices.find(c=>ownedIngredients.has(c))||item.name;
-   if(n&&!unique.has(n)&&!ownedIngredients.has(n)){shopping.push({name:n,done:false});unique.add(n);}
+   if(n&&!unique.has(n)&&!matchesOwned(n)){shopping.push({name:n,done:false});unique.add(n);}
  }
  persistShopping();
 }
@@ -331,17 +349,18 @@ function renderPantry(){
   +'<div id="v2PantrySuggestions" class="v2-pantry-suggestions"></div>'
   +'<div class="v2-pantry-owned">'+(stock.length?stock.map(n=>'<button type="button" data-v2-pantry-item="'+esc(n)+'" title="移除库存食材">'+esc(n)+' ×</button>').join(""):'<span class="v2-intro">还没有添加食材，可先从下方常用食材选择。</span>')+'</div>'
   +'<div class="v2-pantry-modes" role="group" aria-label="库存匹配模式"><button type="button" class="'+(!ownedOnly?'on':'')+'" data-v2-pantry-mode="prefer" aria-pressed="'+!ownedOnly+'">优先用已有食材</button><button type="button" class="'+(ownedOnly?'on':'')+'" data-v2-pantry-mode="only" aria-pressed="'+ownedOnly+'">只用已有食材</button></div>'
-  +'<p class="v2-exclude-caption">“优先”允许补买缺少食材；“只用”需库存足以组成含蔬菜、蛋白质、主食的套餐。库存保存在当前浏览器。</p></section>';
+  +'<p class="v2-exclude-caption">“优先”尽量利用库存；“只用”仅限制<strong>你已选择的食材类别</strong>。例如选了牛肉，肉类菜只选牛肉（含牛腩等部位），未选择的蔬菜、主食类别仍可随机搭配。库存保存在当前浏览器。</p></section>';
 }
 
 function renderPlanner(){
  $2("#content").innerHTML='<div class="v2-intro">每次为你准备 3 套不同菜单。每套确保包含蔬菜、蛋白质和主食；不计算未经核实的热量或克重。</div>'
- +'<div class="v2-controls"><label>月份 <select id="v2MonthSelect">'+Array.from({length:12},(_,i)=>'<option value="'+(i+1)+'" '+(month===i+1?"selected":"")+'>'+(i+1)+'月</option>').join("")+'</select></label><label>人数 <select id="v2People">'+[1,2,3,4,5,6].map(n=>'<option value="'+n+'" '+(n===familyCount?"selected":"")+'>'+n+' 人</option>').join("")+'</select></label><button data-v2-action="generate" class="v2-primary">✦ 随机推荐三套</button></div>'
+ +'<div class="v2-controls"><label>月份 <select id="v2MonthSelect">'+Array.from({length:12},(_,i)=>'<option value="'+(i+1)+'" '+(month===i+1?"selected":"")+'>'+(i+1)+'月</option>').join("")+'</select></label><label>人数 <select id="v2People">'+[1,2,3,4,5,6].map(n=>'<option value="'+n+'" '+(n===familyCount?"selected":"")+'>'+n+' 人</option>').join("")+'</select></label></div>'
  +'<div class="v2-intro">人数用于记录用餐场景；由于原菜谱尚无统一用量，暂不推算具体采购克数。</div>'
  +renderPantry()
  +'<section class="v2-exclude" aria-label="本次排除食材类别"><div class="v2-exclude-head"><div><strong>本次不想吃</strong><span>可多选，再点一次取消，菜单自动更新</span></div><button type="button" class="v2-clear" data-v2-clear-exclusions '+(excluded.size?'':'disabled')+'>清除筛选'+(excluded.size?' · '+excluded.size:'')+'</button></div><div class="v2-exclude-options" role="group" aria-label="排除食材类别">'+["肉类","禽类","水产","蛋类","豆制品"].map(n=>'<button type="button" class="v2-exclude-chip '+(excluded.has(n)?"is-selected":"")+'" data-v2-exclude="'+n+'" aria-pressed="'+excluded.has(n)+'">'+(excluded.has(n)?"✓ ":"＋ ")+n+'</button>').join("")+'</div>'+(excluded.size?'<p class="v2-exclude-caption">已排除 '+[...excluded].map(esc).join("、")+'；若筛选后无法满足营养搭配，可取消部分选项。</p>':'')+'</section>'
  +'<div class="v2-sea-note"><strong>浙江海鲜时令 · '+month+'月</strong><p>'+(marineClosure(month)?'5月1日12时—9月16日12时属东海总体伏季休渔窗口（部分许可作业例外）；切勿将休渔理解为所有鱼禁止销售或食用。 ':'当前不在总体海洋伏季休渔窗口。 ')+'冬季带鱼、秋季梭子蟹、10月母大闸蟹、11月公大闸蟹可优先赏味。赏味期不是质量保证，具体仍取决于产地、养殖与捕捞方式。</p><small>参考：2026年浙江东海休渔通报、浙江日报与地方农业农村部门公开资料</small></div>'
- +(menus.length?'<div class="v2-menu-grid">'+menus.map((menu,i)=>'<article class="v2-menu"><div class="v2-line"><h3>方案 '+(i+1)+'</h3><span class="v2-good">'+month+'月 · 时令优先</span></div>'+menu.items.map((r,j)=>'<div class="v2-menu-item"><div><strong>'+esc(r.name)+'</strong><small>'+esc(r.base?"基础主食":r.roles.join(" · ")||r.category||"家常菜")+'</small><small class="v2-stock-hint">'+(recipeInventoryCoverage(r,ownedIngredients).missing.length?'需补充：'+esc(recipeInventoryCoverage(r,ownedIngredients).missing.join("、")):'✓ 库存齐全')+'</small></div><div class="v2-item-actions"><button data-v2-action="lock" data-menu="'+i+'" data-item="'+j+'" title="锁定">'+(menu.locked[j]?"🔒":"♧")+'</button>'+(r.base?"":'<button data-v2-action="swap" data-menu="'+i+'" data-item="'+j+'" '+(menu.locked[j]?"disabled":"")+'>换菜</button>')+'</div></div>').join("")+'<div class="v2-menu-actions"><button data-v2-action="reroll" data-menu="'+i+'">换一套</button><button data-v2-action="save" data-menu="'+i+'">收藏套餐</button><button data-v2-action="shop" data-menu="'+i+'" class="v2-primary">生成买菜清单</button></div></article>').join(" ")+'</div>':'<div class="empty">当前库存不足以搭配出含蔬菜、蛋白质和主食的套餐。试试“优先用已有食材”，或继续添加食材。</div>')
+ +'<div class="v2-generate-bar"><button type="button" data-v2-action="generate" class="v2-primary v2-generate-button">✦ 随机推荐三套</button><span>不满意？在这里再点一次，立即换三套。</span></div>'
+ +(menus.length?'<div class="v2-menu-grid">'+menus.map((menu,i)=>'<article class="v2-menu"><div class="v2-line"><h3>方案 '+(i+1)+'</h3><span class="v2-good">'+month+'月 · 时令优先</span></div>'+menu.items.map((r,j)=>'<div class="v2-menu-item"><div><strong>'+esc(r.name)+'</strong><small>'+esc(r.base?"基础主食":r.roles.join(" · ")||r.category||"家常菜")+'</small><small class="v2-stock-hint">'+(recipeInventoryCoverage(r,ownedIngredients).missing.length?'需补充：'+esc(recipeInventoryCoverage(r,ownedIngredients).missing.join("、")):'✓ 库存齐全')+'</small></div><div class="v2-item-actions"><button data-v2-action="lock" data-menu="'+i+'" data-item="'+j+'" title="锁定">'+(menu.locked[j]?"🔒":"♧")+'</button>'+(r.base?"":'<button data-v2-action="swap" data-menu="'+i+'" data-item="'+j+'" '+(menu.locked[j]?"disabled":"")+'>换菜</button>')+'</div></div>').join("")+'<div class="v2-menu-actions"><button data-v2-action="reroll" data-menu="'+i+'">换一套</button><button data-v2-action="save" data-menu="'+i+'">收藏套餐</button><button data-v2-action="shop" data-menu="'+i+'" class="v2-primary">生成买菜清单</button></div></article>').join(" ")+'</div>':'<div class="empty">当前筛选条件下无法搭配含蔬菜、蛋白质和主食的套餐，请调整库存选择或排除条件。</div>')
  +'<div class="v2-saved"><h3>已保存的套餐</h3>'+(savedMenus.length?savedMenus.slice(0,5).map((s,i)=>'<div class="v2-line"><span>'+esc(s.names.join("、"))+'</span><button data-v2-action="saved" data-menu="'+i+'">加入清单</button></div>').join(""):"还没有收藏的套餐")+'</div>';
  $2("#v2MonthSelect").onchange=e=>{month=Number(e.target.value);regenerate();};
  updatePantrySuggestions();
