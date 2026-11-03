@@ -256,6 +256,10 @@ function mountNavigation(){
  +categoryHTML
  +'<div class="v2-notes-nav"><button type="button" class="nav '+(page==="tips"&&!view?"active":"")+'" data-v2-page="tips"><span>✎　烹饪心得</span><span>✦</span></button></div>';
  bottom.innerHTML=MAIN_MENU.map(item=>'<button type="button" class="'+(active===item.id?"active":"")+'" data-v2-page="'+item.id+'" aria-label="'+item.title+'"><span class="v2-bottom-icon">'+item.icon+'</span><span>'+item.short+'</span></button>').join("");
+ const tagChips=$2("#tagChips");
+ if(tagChips&&active==="recipes"&&page!=="tips"){
+  tagChips.insertAdjacentHTML("beforeend",'<button type="button" class="chip v2-tips-link" data-v2-page="tips">✎ 烹饪心得</button>');
+ }
  const orderBtn=$2("#orderBtn");
  if(orderBtn){orderBtn.innerHTML="☷ 我的清单 <span id=\"orderCount\">"+order.length+"</span>";orderBtn.onclick=()=>navigateApp("list");}
 }
@@ -304,7 +308,7 @@ document.addEventListener("click",e=>{
  if(action==="reroll")regenerateOne(mi);
  if(action==="swap")replaceItem(mi,ii);
  if(action==="lock"){menus[mi].locked[ii]=!menus[mi].locked[ii];renderV2();}
- if(action==="shop"){addMenuToList(menus[mi]);navigateApp("list");}
+ if(action==="shop"&&menus[mi]){addMenuToList(menus[mi]);navigateApp("list");}
  if(action==="remove"){shopping.splice(ii,1);persistShopping();renderV2();}
  if(action==="clear"){shopping=[];persistShopping();renderV2();}
  if(action==="copy"){const value=shopping.map(x=>(x.done?"☑ ":"☐ ")+x.name).join("\n");if(navigator.clipboard?.writeText){navigator.clipboard.writeText(value).then(()=>alert("已复制买菜清单")).catch(()=>prompt("复制买菜清单",value));}else prompt("复制买菜清单",value);}
