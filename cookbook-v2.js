@@ -168,7 +168,7 @@ const originalRender=render;
 render=function(){
  originalRender();
  mountNavigation();
- if(view)renderV2();
+ renderV2();
 };
 document.addEventListener("click",e=>{
  if(e.target.closest("[data-page],[data-tag],[data-category]")){
@@ -191,12 +191,12 @@ document.addEventListener("click",e=>{
  if(action==="reroll")regenerateOne(mi);
  if(action==="swap")replaceItem(mi,ii);
  if(action==="lock"){menus[mi].locked[ii]=!menus[mi].locked[ii];renderV2();}
- if(action==="save"){savedMenus.unshift({date:new Date().toISOString(),names:menus[mi].items.map(x=>x.name)});savedMenus=savedMenus.slice(0,30);storage.set("savedMenus",savedMenus);renderV2();}
+ if(action==="save"){savedMenus.unshift({date:new Date().toISOString(),names:menus[mi].items.map(x=>x.name),items:menus[mi].items.map(x=>({id:x.id,ingredients:x.refs.map(ref=>ref.name)}))});savedMenus=savedMenus.slice(0,30);storage.set("savedMenus",savedMenus);renderV2();}
  if(action==="shop"){addShopping(menus[mi]);view="shopping";renderV2();}
  if(action==="remove"){shopping.splice(ii,1);persistShopping();renderV2();}
  if(action==="clear"){shopping=[];persistShopping();renderV2();}
  if(action==="copy"){const value=shopping.map(x=>(x.done?"☑ ":"☐ ")+x.name).join("\n");navigator.clipboard?.writeText(value).then(()=>alert("已复制买菜清单")).catch(()=>prompt("复制买菜清单",value));}
- if(action==="saved"){const names=savedMenus[mi]?.names||[];shopping=[...new Set([...shopping.map(x=>x.name),...names])].map(name=>({name,done:false}));persistShopping();view="shopping";renderV2();}
+ if(action==="saved"){const refs=(savedMenus[mi]?.items||[]).flatMap(x=>x.ingredients||[]);const existing=new Set(shopping.map(x=>x.name));for(const name of refs)if(!existing.has(name)){shopping.push({name,done:false});existing.add(name);}persistShopping();view="shopping";renderV2();}
  if(action==="detail"){const recipe=modeled.find(x=>x.id===ii);if(recipe)openDetail(recipe.id);}
 });
 document.addEventListener("change",e=>{
@@ -238,7 +238,7 @@ function renderIngredients(){
  $2("#content").innerHTML='<div class="v2-intro">基于现有 '+modeled.length+' 道家常菜提取食材 · 浙江时令月份为近似参考，非市场供应保证。</div>'
  +'<div class="v2-controls"><label>月份 <select id="v2MonthSelect">'+Array.from({length:12},(_,i)=>'<option value="'+(i+1)+'" '+(month===i+1?"selected":"")+'>'+(i+1)+'月</option>').join("")+'</select></label><input id="v2Search" class="search" placeholder="搜索食材" value="'+esc(foodQuery)+'"></div>'
  +'<div class="v2-filters">'+categories.map(x=>'<button data-v2-cat="'+esc(x)+'" class="'+(x===selectedCategory?"on":"")+'">'+esc(x)+'</button>').join("")+'</div>'
- +'<div class="v2-grid">'+list.map(x=>'<article class="v2-tile"><div class="v2-line"><strong>'+esc(x.name)+'</strong><span class="'+(x.months.includes(month)?"v2-good":"v2-muted")+'">'+(x.months.includes(month)?"本月时令":x.months.length?"其他月份":"全年/待确认")+'</span></div><p>'+esc(x.category)+' · '+(x.months.length?x.months.join("、")+"月":"不限制时令")+'</p><button data-v2-ingredient="'+esc(x.name)+'" class="v2-link">'+x.recipeIds.size+' 道关联菜谱</button><div class="v2-related">'+[...x.recipeIds].slice(0,3).map(id=>'<button data-v2-action="detail" data-item="'+id+'">'+esc(modeled[id].name)+'</button>').join("")+'</div></article>').join("")+'</div>'
+ +'<div class="v2-grid">'+list.map(x=>'<article class="v2-tile"><div class="v2-line"><strong>'+esc(x.name)+'</strong><span class="'+(x.months.includes(month)?"v2-good":"v2-muted")+'">'+(x.months.includes(month)?"本月时令":x.months.length?"其他月份":"全年/待确认")+'</span></div><p>'+esc(x.category)+' · '+(x.months.length?x.months.join("、")+"月":"不限制时令")+'</p><button data-v2-ingredient="'+esc(x.name)+'" class="v2-link">'+x.recipeIds.size+' 道关联菜谱</button><div class="v2-related">'+[...x.recipeIds].map(id=>'<button data-v2-action="detail" data-item="'+id+'">'+esc(modeled[id].name)+'</button>').join("")+'</div></article>').join("")+'</div>'
  +(list.length?"":'<p class="empty">未找到对应食材</p>');
  $2("#v2MonthSelect").onchange=e=>{month=Number(e.target.value);renderIngredients();};
 }
