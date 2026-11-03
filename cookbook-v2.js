@@ -40,7 +40,7 @@ const GROUPS = {
 "调味加工":["榨菜","咸菜","雪菜","梅干菜","辣白菜","酸菜","腐乳","紫菜","海带","菜干","白芝麻","大蒜","生姜","大葱","八角","水"]
 };
 const groups = new Map(Object.entries(GROUPS).flatMap(([g,items])=>items.map(item=>[item,g])));
-const strongProtein = new Set(["猪肉","猪五花","猪里脊","猪肉末","猪排骨","猪肚","猪蹄","大肠","牛肉","牛腩","牛肉丸","羊肉","鸡肉","鸡翅","鸡爪","鸭肉","鸭舌","鱼","虾","生蚝","蛤蜊","墨鱼","墨鱼干","鲍鱼","青蟹","田蟹","海瓜子","水潺","蛏子","沙蒜","鸡蛋","皮蛋","豆腐","豆腐干","油豆腐","黄豆","温州鱼饼","明珠鱼片"]);
+const strongProtein = new Set(["猪肉","猪五花","猪里脊","猪肉末","猪排骨","猪肚","大肠","牛肉","牛腩","牛肉丸","羊肉","鸡肉","鸡翅","鸭肉","鸭舌","鱼","虾","生蚝","蛤蜊","墨鱼","墨鱼干","鲍鱼","青蟹","田蟹","海瓜子","水潺","蛏子","沙蒜","鸡蛋","皮蛋","豆腐","豆腐干","油豆腐","黄豆","温州鱼饼","明珠鱼片"]);
 const vegetable = new Set([...GROUPS["蔬菜"],...GROUPS["菌菇"]].filter(x=>!["洋葱","大葱","青豆"].includes(x)));
 const starchy = new Set(GROUPS["谷薯"]);
 const weakVegetable = new Set(["洋葱","大葱","青豆","豆芽","绿豆芽","菌菇","春笋","冬笋"]);
@@ -246,6 +246,7 @@ function renderPlanner(){
  $2("#content").innerHTML='<div class="v2-intro">每次为你准备 3 套不同菜单。每套确保包含蔬菜、蛋白质和主食；不计算未经核实的热量或克重。</div>'
  +'<div class="v2-controls"><label>月份 <select id="v2MonthSelect">'+Array.from({length:12},(_,i)=>'<option value="'+(i+1)+'" '+(month===i+1?"selected":"")+'>'+(i+1)+'月</option>').join("")+'</select></label><label>人数 <select id="v2People">'+[1,2,3,4,5,6].map(n=>'<option value="'+n+'" '+(n===familyCount?"selected":"")+'>'+n+' 人</option>').join("")+'</select></label><button data-v2-action="generate" class="v2-primary">✦ 随机推荐三套</button></div>'
  +'<div class="v2-intro">人数用于记录用餐场景；由于原菜谱尚无统一用量，暂不推算具体采购克数。</div>'
+ +'<div class="v2-controls"><label>本次排除食材类别 <select id="v2Exclude" multiple size="4" aria-label="选择排除食材类别">'+["肉类","禽类","水产","蛋类","豆制品"].map(n=>'<option value="'+n+'" '+(excluded.has(n)?"selected":"")+'>'+n+'</option>').join("")+'</select></label><span class="v2-intro">按住 Ctrl 可多选；调整后重新生成。</span></div>'
  +(menus.length?'<div class="v2-menu-grid">'+menus.map((menu,i)=>'<article class="v2-menu"><div class="v2-line"><h3>方案 '+(i+1)+'</h3><span class="v2-good">'+month+'月 · 时令优先</span></div>'+menu.items.map((r,j)=>'<div class="v2-menu-item"><div><strong>'+esc(r.name)+'</strong><small>'+esc(r.base?"基础主食":r.roles.join(" · ")||r.category||"家常菜")+'</small></div><div class="v2-item-actions"><button data-v2-action="lock" data-menu="'+i+'" data-item="'+j+'" title="锁定">'+(menu.locked[j]?"🔒":"♧")+'</button>'+(r.base?"":'<button data-v2-action="swap" data-menu="'+i+'" data-item="'+j+'" '+(menu.locked[j]?"disabled":"")+'>换菜</button>')+'</div></div>').join("")+'<div class="v2-menu-actions"><button data-v2-action="reroll" data-menu="'+i+'">换一套</button><button data-v2-action="save" data-menu="'+i+'">收藏套餐</button><button data-v2-action="shop" data-menu="'+i+'" class="v2-primary">生成买菜清单</button></div></article>').join(" ")+'</div>':'<div class="empty">当前条件下暂无符合全部营养角色的套餐，请调整条件。</div>')
  +'<div class="v2-saved"><h3>已保存的套餐</h3>'+(savedMenus.length?savedMenus.slice(0,5).map((s,i)=>'<div class="v2-line"><span>'+esc(s.names.join("、"))+'</span><button data-v2-action="saved" data-menu="'+i+'">加入清单</button></div>').join(""):"还没有收藏的套餐")+'</div>';
  $2("#v2MonthSelect").onchange=e=>{month=Number(e.target.value);regenerate();};
