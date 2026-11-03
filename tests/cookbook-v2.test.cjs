@@ -54,3 +54,20 @@ test('购物清单和套餐存储功能已集成',()=>{
  assert.ok(source.includes('data-v2-action="lock"'));
  assert.ok(source.includes('data-v2-action="swap"'));
 });
+
+test('排除筛选采用可取消的独立标签，并支持一键清除',()=>{
+ assert.ok(source.includes('data-v2-exclude='));
+ assert.ok(source.includes('data-v2-clear-exclusions'));
+ assert.ok(source.includes('excluded.has(group))excluded.delete(group)'));
+ assert.ok(source.includes('excluded.clear()'));
+ assert.ok(source.includes('aria-pressed='));
+ assert.ok(!source.includes('id="v2Exclude" multiple'));
+});
+test('排除食材类别时配餐算法不会选用所排除的食材',()=>{
+ const forbidden=new Function('recipes',definitions+'let month=11;let excluded=new Set(["水产"]);\n'+generator+'\nreturn {generate,modeled,ingredientCategory};')(recipes);
+ for(let n=0;n<100;n++){
+  const menu=forbidden.generate();
+  assert.ok(menu);
+  assert.ok(menu.items.every(r=>r.base || !r.refs.some(x=>x.choices.some(choice=>forbidden.ingredientCategory(choice)==='水产'))));
+ }
+});
