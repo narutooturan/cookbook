@@ -85,7 +85,7 @@ const strongProtein = new Set(["猪肉","猪五花","猪里脊","猪肉末","猪
 const vegetable = new Set([...GROUPS["蔬菜"],...GROUPS["菌菇"]].filter(x=>!["洋葱","大葱","青豆"].includes(x)));
 const starchy = new Set(GROUPS["谷薯"]);
 const weakVegetable = new Set(["洋葱","大葱","青豆","豆芽","绿豆芽","菌菇","春笋","冬笋"]);
-const seasonal = name => SEASONS[name] || [];
+const seasonal = name => SEASONS[name] || SEAFOOD_TIMING[name]?.months || [];
 const fallbackSeason = [1,2,3,4,5,6,7,8,9,10,11,12];
 const storage = {
 get(key, fallback){try { return JSON.parse(localStorage.getItem("cookbook_v2_"+key)) ?? fallback; } catch {return fallback;}},
@@ -164,7 +164,7 @@ function generate(preserved=[]){
  if(!chosen.some(r=>r.starch?.length)&&(!ownedOnly||ownedIngredients.has("大米")))chosen.push({...pantry[0],id:"base-rice",name:"米饭（基础搭配）",names:["大米"],refs:[{name:"大米",choices:["大米"]}],proteins:[],vegs:[],starch:["大米"],soup:false});
  if(chosen.length<3)take(r=>r.soup&&r.proteins.length+r.vegs.length>0);
  if(chosen.length<3)take(r=>r.vegs.length||r.proteins.length);
- if(chosen.length<3)return null;
+ if(chosen.length<3&&!ownedOnly)return null;
  const roles=countCovered(chosen);
  if(!roles.protein||!roles.veg||!roles.starch)return null;
  return {items:chosen.slice(0,4),locked:chosen.map(x=>preserved.includes(x))};
@@ -341,7 +341,7 @@ function renderPlanner(){
  +renderPantry()
  +'<section class="v2-exclude" aria-label="本次排除食材类别"><div class="v2-exclude-head"><div><strong>本次不想吃</strong><span>可多选，再点一次取消，菜单自动更新</span></div><button type="button" class="v2-clear" data-v2-clear-exclusions '+(excluded.size?'':'disabled')+'>清除筛选'+(excluded.size?' · '+excluded.size:'')+'</button></div><div class="v2-exclude-options" role="group" aria-label="排除食材类别">'+["肉类","禽类","水产","蛋类","豆制品"].map(n=>'<button type="button" class="v2-exclude-chip '+(excluded.has(n)?"is-selected":"")+'" data-v2-exclude="'+n+'" aria-pressed="'+excluded.has(n)+'">'+(excluded.has(n)?"✓ ":"＋ ")+n+'</button>').join("")+'</div>'+(excluded.size?'<p class="v2-exclude-caption">已排除 '+[...excluded].map(esc).join("、")+'；若筛选后无法满足营养搭配，可取消部分选项。</p>':'')+'</section>'
  +'<div class="v2-sea-note"><strong>浙江海鲜时令 · '+month+'月</strong><p>'+(marineClosure(month)?'5月1日12时—9月16日12时属东海总体伏季休渔窗口（部分许可作业例外）；切勿将休渔理解为所有鱼禁止销售或食用。 ':'当前不在总体海洋伏季休渔窗口。 ')+'冬季带鱼、秋季梭子蟹、10月母大闸蟹、11月公大闸蟹可优先赏味。赏味期不是质量保证，具体仍取决于产地、养殖与捕捞方式。</p><small>参考：2026年浙江东海休渔通报、浙江日报与地方农业农村部门公开资料</small></div>'
- +(menus.length?'<div class="v2-menu-grid">'+menus.map((menu,i)=>'<article class="v2-menu"><div class="v2-line"><h3>方案 '+(i+1)+'</h3><span class="v2-good">'+month+'月 · 时令优先</span></div>'+menu.items.map((r,j)=>'<div class="v2-menu-item"><div><strong>'+esc(r.name)+'</strong><small>'+esc(r.base?"基础主食":r.roles.join(" · ")||r.category||"家常菜")+'</small></div><div class="v2-item-actions"><button data-v2-action="lock" data-menu="'+i+'" data-item="'+j+'" title="锁定">'+(menu.locked[j]?"🔒":"♧")+'</button>'+(r.base?"":'<button data-v2-action="swap" data-menu="'+i+'" data-item="'+j+'" '+(menu.locked[j]?"disabled":"")+'>换菜</button>')+'</div></div>').join("")+'<div class="v2-menu-actions"><button data-v2-action="reroll" data-menu="'+i+'">换一套</button><button data-v2-action="save" data-menu="'+i+'">收藏套餐</button><button data-v2-action="shop" data-menu="'+i+'" class="v2-primary">生成买菜清单</button></div></article>').join(" ")+'</div>':'<div class="empty">当前条件下暂无符合全部营养角色的套餐，请调整条件。</div>')
+ +(menus.length?'<div class="v2-menu-grid">'+menus.map((menu,i)=>'<article class="v2-menu"><div class="v2-line"><h3>方案 '+(i+1)+'</h3><span class="v2-good">'+month+'月 · 时令优先</span></div>'+menu.items.map((r,j)=>'<div class="v2-menu-item"><div><strong>'+esc(r.name)+'</strong><small>'+esc(r.base?"基础主食":r.roles.join(" · ")||r.category||"家常菜")+'</small></div><div class="v2-item-actions"><button data-v2-action="lock" data-menu="'+i+'" data-item="'+j+'" title="锁定">'+(menu.locked[j]?"🔒":"♧")+'</button>'+(r.base?"":'<button data-v2-action="swap" data-menu="'+i+'" data-item="'+j+'" '+(menu.locked[j]?"disabled":"")+'>换菜</button>')+'</div></div>').join("")+'<div class="v2-menu-actions"><button data-v2-action="reroll" data-menu="'+i+'">换一套</button><button data-v2-action="save" data-menu="'+i+'">收藏套餐</button><button data-v2-action="shop" data-menu="'+i+'" class="v2-primary">生成买菜清单</button></div></article>').join(" ")+'</div>':'<div class="empty">当前库存不足以搭配出含蔬菜、蛋白质和主食的套餐。试试“优先用已有食材”，或继续添加食材。</div>')
  +'<div class="v2-saved"><h3>已保存的套餐</h3>'+(savedMenus.length?savedMenus.slice(0,5).map((s,i)=>'<div class="v2-line"><span>'+esc(s.names.join("、"))+'</span><button data-v2-action="saved" data-menu="'+i+'">加入清单</button></div>').join(""):"还没有收藏的套餐")+'</div>';
  $2("#v2MonthSelect").onchange=e=>{month=Number(e.target.value);regenerate();};
  updatePantrySuggestions();
