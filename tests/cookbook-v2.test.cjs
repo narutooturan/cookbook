@@ -73,7 +73,7 @@ test('排除食材类别时配餐算法不会选用所排除的食材',()=>{
 });
 
 test('已有食材优先及严格库存模式',()=>{
- const makeOwned=new Function('recipes','inventory','strict',definitions+'let month=11;let excluded=new Set();let ownedIngredients=new Set(inventory);let ownedOnly=strict;\n'+generator+'\nreturn {generate,recipeInventoryCoverage,countCovered};');
+ const makeOwned=new Function('recipes','inventory','strict',definitions+'let month=11;let excluded=new Set();let ownedIngredients=new Set(inventory);let ownedOnly=strict;\n'+generator+'\nreturn {generate,recipeInventoryCoverage,countCovered,ingredientCategory,matchesOwned};');
  const owned=['青菜','豆腐','鸡肉','大米','菌菇','白萝卜','牛肉','面条','番茄','鸡蛋','黄瓜'];
  const strict=makeOwned(recipes,owned,true);
  for(let i=0;i<80;i++){
@@ -81,7 +81,11 @@ test('已有食材优先及严格库存模式',()=>{
   if(!menu)continue;
   const roles=strict.countCovered(menu.items);
   assert.ok(roles.veg&&roles.protein&&roles.starch);
-  assert.ok(menu.items.every(item=>strict.recipeInventoryCoverage(item,new Set(owned)).missing.length===0));
+  assert.ok(menu.items.every(item=>item.refs.every(ref=>ref.choices.some(name=>{
+   const category=strict.ingredientCategory(name);
+   const selectedCategories=new Set(owned.map(strict.ingredientCategory));
+   return !selectedCategories.has(category)||strict.matchesOwned(name);
+  }))));
  }
  const soft=makeOwned(recipes,['大米','白萝卜','鸡蛋'],false);
  assert.ok(soft.generate());
@@ -95,4 +99,34 @@ test('浙江海鲜赏味期保留独立物种名称，不将带鱼等归并为�
 });
 test('库存输入、移除、严格模式与购物清单去重的 UI 已接入',()=>{
  for(const s of ['v2PantryInput','data-v2-pantry-suggestion','data-v2-pantry-item','data-v2-pantry-mode','ownedOnly','ownedIngredients','recipeInventoryCoverage'])assert.ok(source.includes(s));
+});
+
+test('只用已有食材：牛肉限制肉类，未选择的蔬菜与主食不受限',()=>{
+ const create=new Function('recipes','inventory',definitions+'let month=11;let excluded=new Set();let ownedIngredients=new Set(inventory);let ownedOnly=true;\n'+generator+'\nreturn {generate,eligible,modeled,ingredientCategory,matchesOwned,countCovered};');
+ const app=create(recipes,['牛肉']);
+ const beef=app.modeled.find(r=>r.name==='红烧牛肉');
+ const pork=app.modeled.find(r=>r.name==='红烧排骨');
+ const vegetable=app.modeled.find(r=>r.name==='水煮青菜');
+ const staple=app.modeled.find(r=>r.name==='番薯粥');
+ assert.equal(app.eligible(beef),true);
+ assert.equal(app.eligible(pork),false);
+ assert.equal(app.eligible(vegetable),true);
+ assert.equal(app.eligible(staple),true);
+ assert.equal(app.matchesOwned('牛腩'),true);
+ for(let i=0;i<100;i++){
+  const meal=app.generate();
+  assert.ok(meal);
+  const roles=app.countCovered(meal.items);
+  assert.ok(roles.veg&&roles.protein&&roles.starch);
+  assert.ok(meal.items.every(r=>r.refs.every(ref=>ref.choices.some(n=>app.ingredientCategory(n)!=='肉类'||app.matchesOwned(n)))));
+ }
+});
+test('随机生成按钮位于配置末尾，紧挨方案区域',()=>{
+ const ui=source.slice(source.indexOf('function renderPlanner(){'),source.indexOf('function renderShopping(){'));
+ const btn=ui.indexOf('v2-generate-bar');
+ const excludes=ui.indexOf('本次不想吃');
+ const menus=ui.indexOf('v2-menu-grid');
+ assert.ok(btn>excludes);
+ assert.ok(menus>btn);
+ assert.equal((ui.match(/data-v2-action="generate"/g)||[]).length,1);
 });
