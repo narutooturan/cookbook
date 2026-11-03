@@ -73,7 +73,7 @@ function ingredientInventoryMatches(recipe,owned){
 }
 function recipeInventoryCoverage(recipe,owned){
  const refs=recipe.refs||[];if(!refs.length)return {hits:0,total:0,missing:[]};
- const missing=refs.filter(ref=>!ref.choices.some(choice=>owned.has(choice))).map(ref=>ref.name);
+ const missing=refs.filter(ref=>!ref.choices.some(choice=>owned.has(choice)||(owned===ownedIngredients&&matchesOwned(choice)))).map(ref=>ref.name);
  return {hits:refs.length-missing.length,total:refs.length,missing};
 }
 function seasonalSeafoodBonus(recipe,monthNumber){
